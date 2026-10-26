@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Oja Ledger</title><meta name="theme-color" content="#f4f1ea">
+<title>Oja Ledger</title><meta name="theme-color" content="#f4f1ea"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg"><meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--g:#0a9d63;--ink:#0b0b0f;--muted:#5d6170;--glass:rgba(255,255,255,.55);--edge:rgba(255,255,255,.75)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -31,6 +31,8 @@ input.f{width:100%;font:inherit;font-size:17px;color:var(--ink);border:0;backgro
 .ticon{width:40px;height:40px;margin:0 auto 6px;border-radius:12px;display:grid;place-items:center;font-size:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
 ul{padding:0;margin:0}li{list-style:none;padding:12px 0;border-bottom:1px solid rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center;gap:10px}li:last-child{border:0}
 .wa{display:inline-block;margin-top:6px;background:linear-gradient(145deg,#3ee07a,#1ea952);color:#fff;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;text-decoration:none;white-space:nowrap}
+.del{display:inline-block;margin-top:6px;margin-left:4px;text-decoration:none;font-size:15px}
+.off{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,.75);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;backdrop-filter:blur(12px)}
 .ex{background:rgba(255,255,255,.7);border:1px solid var(--edge);font-size:14px;font-weight:500;padding:8px 12px;margin:8px 6px 0 0}
 </style></head><body>
 <header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book.</p></div></header>
@@ -82,10 +84,14 @@ function waText(e){const d=e.time.split(",")[0];
   if(e.type==="sale")return `🧺 Oja Ledger receipt\n${e.qty} ${e.item||"item"} @ ${naira(e.unit_price)}\nTotal: ${naira(e.total)} (${d})\nThank you, come again! 🙏🏾`;
   return `🧺 Oja Ledger\nI bought ${e.qty} ${e.item||"goods"} from you for ${naira(e.total)} (${d}). Please confirm. 🙏🏾`}
 function waLink(e){return "https://wa.me/?text="+encodeURIComponent(waText(e))}
+function del(i){if(window.confirm("Remove this entry?")){book.splice(i,1);localStorage.oja=JSON.stringify(book);render()}}
 function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
   book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
   tSale.textContent=naira(s.sale);tBuy.textContent=naira(s.purchase);tDebt.textContent=naira(s.debt);
-  document.getElementById("book").innerHTML=book.map(e=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+  document.getElementById("book").innerHTML=book.map((e,i)=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
 ["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
 render();
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
+function net(){let b=document.getElementById("offb");if(!navigator.onLine){if(!b){b=document.createElement("div");b.id="offb";b.className="off";b.textContent="📴 No network? No wahala. Oja still dey work.";document.body.appendChild(b)}}else if(b)b.remove()}
+addEventListener("online",net);addEventListener("offline",net);net();
 </script></body></html>
