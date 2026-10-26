@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oja Ledger</title>
+<style>
+:root{--g:#0a7d4f;--bg:#fff8ec;--ink:#1d1d1d;--muted:#6b6b6b;--card:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--g);color:#fff;padding:18px 20px}header h1{margin:0;font-size:24px}header p{margin:4px 0 0;opacity:.9}
+main{max-width:560px;margin:auto;padding:16px}
+.box{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 2px 10px #0001;margin-bottom:16px}
+textarea{width:100%;font-size:18px;padding:12px;border-radius:12px;border:2px solid #ddd;resize:none}
+button{font-size:18px;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
+.primary{background:var(--g);color:#fff;width:100%;margin-top:10px}.row{display:flex;gap:10px;margin-top:12px}.row button{flex:1}
+.ok{background:var(--g);color:#fff}.no{background:#eee}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:600;font-size:14px;color:#fff}
+.sale{background:#0a7d4f}.purchase{background:#c46a00}.debt{background:#b3261e}
+.big{font-size:32px;font-weight:800;margin:8px 0}.muted{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.grid div{background:#f6f6f6;border-radius:10px;padding:8px}
+input.f{width:100%;font-size:16px;border:1px solid #ccc;border-radius:8px;padding:6px}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.totals b{display:block;font-size:20px}
+li{list-style:none;padding:10px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:8px}ul{padding:0;margin:0}
+.ex{background:#f0f0f0;font-size:14px;padding:6px 10px;margin:4px 4px 0 0;border-radius:999px}
+</style></head><body>
+<header><h1>🧺 Oja Ledger</h1><p>Talk your sales. We write the book.</p></header>
+<main>
+<div class="box">
+  <label class="muted">Wetin happen for market? (voice coming soon, type for now)</label>
+  <textarea id="say" rows="2" placeholder="I sell 3 tuber yam 2k each"></textarea>
+  <div id="examples"></div>
+  <button class="primary" onclick="hear()">Write am for book ✍🏾</button>
+</div>
+<div class="box" id="confirm" hidden></div>
+<div class="box"><h3 style="margin-top:0">Today's money</h3>
+  <div class="totals"><div>Sold<b id="tSale">₦0</b></div><div>Bought<b id="tBuy">₦0</b></div><div>Owed you<b id="tDebt">₦0</b></div></div></div>
+<div class="box"><h3 style="margin-top:0">Ledger</h3><ul id="book"></ul></div>
+</main>
+<script>
+const NUM={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,half:.5,dozen:12};
+const naira=n=>n==null?"-":"₦"+Number(n).toLocaleString("en-NG");
+function money(t){t=t.toLowerCase().replace(/[,₦]|naira/g,"").trim();const m=t.match(/^(\d+(?:\.\d+)?)(k)?$/);if(!m)return null;let v=parseFloat(m[1]);return m[2]?v*1000:v}
+function parse(text){
+  const low=" "+text.toLowerCase()+" ";let type="sale";
+  if(/owe|credit|go pay later|never pay/.test(low))type="debt";
+  else if(/ i buy | i don buy |bought|restock/.test(low))type="purchase";
+  let price=null,each=false;const pm=low.match(/(?:for|at|₦|n)\s*([\d,\.]+k?)|([\d,\.]+k)\b|([\d,]+)\s*naira/);
+  if(pm){price=money(pm[1]||pm[2]||pm[3]);each=/\b(each|per|one one|apiece)\b/.test(low.slice(pm.index+pm[0].length,pm.index+pm[0].length+15))}
+  if(price==null){const ns=(low.match(/\b\d[\d,]*k?\b/g)||[]).map(money).filter(n=>n&&n>=100);if(ns.length)price=Math.max(...ns)}
+  let qty=null;for(const tok of low.match(/[a-z]+|\d+(?:\.\d+)?k?/g)||[]){let v=tok in NUM?NUM[tok]:(/^\d+(\.\d+)?$/.test(tok)?parseFloat(tok):null);if(v!=null&&v!==price){qty=v;break}}
+  qty=qty||1;let item=null;
+  const im=low.match(new RegExp("(?:\\d+|"+Object.keys(NUM).join("|")+")\\s+((?:[a-z]+\\s?){1,3}?)(?=\\s*(?:for|at|₦|\\d|each|per|$))"));if(im)item=im[1].trim();
+  let who=null;if(type==="debt"){const d=low.match(/\bfor\s+([a-z]+(?:\s[a-z]+)?)/);if(d)item=d[1];const w=low.match(/^\s*([a-z]+(?:\s[a-z]+)?)\s+(?:dey\s+)?owe/);if(w)who=w[1].replace(/\b\w/g,c=>c.toUpperCase());qty=1}
+  const total=price==null?null:(each?price*qty:price);const unit=price==null?null:(each?price:Math.round(price/qty*100)/100);
+  return {time:new Date().toLocaleString("en-NG",{timeZone:"Africa/Lagos"}),type,item,qty,unit_price:unit,total,who,heard:text};
+}
+let draft=null;const book=JSON.parse(localStorage.oja||"[]");
+function hear(){const t=document.getElementById("say").value.trim();if(!t)return;draft=parse(t);showConfirm()}
+function showConfirm(){const e=draft,c=document.getElementById("confirm");c.hidden=false;
+  const label={sale:"SALE 💰",purchase:"PURCHASE 📦",debt:"DEBT 📝"}[e.type];
+  c.innerHTML=`<span class="chip ${e.type}">${label}</span><div class="big">${naira(e.total)}</div>
+  <div class="muted">You talk: "${e.heard}"</div>
+  <div class="grid"><div>Item<input class="f" id="fi" value="${e.item||""}"></div><div>Qty<input class="f" id="fq" type="number" value="${e.qty}"></div>
+  <div>Unit price<input class="f" id="fu" type="number" value="${e.unit_price??""}"></div><div>${e.type==="debt"?"Who owe":"Type"}<input class="f" id="fw" value="${e.type==="debt"?(e.who||""):e.type}"></div></div>
+  <div class="row"><button class="no" onclick="cancel()">✏️ No be am</button><button class="ok" onclick="confirmIt()">✅ Correct!</button></div>`}
+function confirmIt(){const q=+fq.value||1,u=fu.value===""?null:+fu.value;draft.item=fi.value;draft.qty=q;draft.unit_price=u;draft.total=u==null?draft.total:u*q;
+  if(draft.type==="debt")draft.who=fw.value;else if(["sale","purchase","debt"].includes(fw.value))draft.type=fw.value;
+  draft.status="confirmed";book.unshift(draft);localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
+function cancel(){draft=null;document.getElementById("confirm").hidden=true}
+function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
+  book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
+  tSale.textContent=naira(s.sale);tBuy.textContent=naira(s.purchase);tDebt.textContent=naira(s.debt);
+  document.getElementById("book").innerHTML=book.map(e=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><b>${naira(e.total)}</b></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
+render();
+</script></body></html>
