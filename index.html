@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Oja Ledger</title>
+<title>Oja Ledger v2</title>
 <style>
 :root{--g:#0a7d4f;--bg:#fff8ec;--ink:#1d1d1d;--muted:#6b6b6b;--card:#fff}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
@@ -18,6 +18,7 @@ button{font-size:18px;border:0;border-radius:12px;padding:12px 16px;cursor:point
 input.f{width:100%;font-size:16px;border:1px solid #ccc;border-radius:8px;padding:6px}
 .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.totals b{display:block;font-size:20px}
 li{list-style:none;padding:10px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:8px}ul{padding:0;margin:0}
+.wa{background:#25D366;color:#fff;font-size:14px;padding:6px 10px;border-radius:999px;text-decoration:none;white-space:nowrap}
 .ex{background:#f0f0f0;font-size:14px;padding:6px 10px;margin:4px 4px 0 0;border-radius:999px}
 </style></head><body>
 <header><h1>🧺 Oja Ledger</h1><p>Talk your sales. We write the book.</p></header>
@@ -64,10 +65,15 @@ function confirmIt(){const q=+fq.value||1,u=fu.value===""?null:+fu.value;draft.i
   if(draft.type==="debt")draft.who=fw.value;else if(["sale","purchase","debt"].includes(fw.value))draft.type=fw.value;
   draft.status="confirmed";book.unshift(draft);localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
 function cancel(){draft=null;document.getElementById("confirm").hidden=true}
+function waText(e){const d=e.time.split(",")[0];
+  if(e.type==="debt")return `🧺 Oja Ledger\n${e.who||"You"}, you owe me ${naira(e.total)} for ${e.item||"goods"} (${d}).\nReply OK to agree. 🙏🏾`;
+  if(e.type==="sale")return `🧺 Oja Ledger receipt\n${e.qty} ${e.item||"item"} @ ${naira(e.unit_price)}\nTotal: ${naira(e.total)} (${d})\nThank you, come again! 🙏🏾`;
+  return `🧺 Oja Ledger\nI bought ${e.qty} ${e.item||"goods"} from you for ${naira(e.total)} (${d}). Please confirm. 🙏🏾`}
+function waLink(e){return "https://wa.me/?text="+encodeURIComponent(waText(e))}
 function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
   book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
   tSale.textContent=naira(s.sale);tBuy.textContent=naira(s.purchase);tDebt.textContent=naira(s.debt);
-  document.getElementById("book").innerHTML=book.map(e=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><b>${naira(e.total)}</b></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+  document.getElementById("book").innerHTML=book.map(e=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
 ["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
 render();
 </script></body></html>
