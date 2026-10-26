@@ -23,6 +23,9 @@ It understands sales ("Mama Chidi buy 2 bag rice for 90000"), purchases ("I don 
 
 ## Roadmap
 - [x] Text → ledger entry (rule-based v0)
+- [x] Confirm screen + today's totals
+- [x] Send on WhatsApp: debt confirmations and receipts
+- [x] Installable app that works offline (no network in the market? no wahala)
 - [ ] Voice → text with omniASR
 - [ ] Llama upgrade for messy, real-world sentences
 - [ ] Simple confirm screen + daily totals
