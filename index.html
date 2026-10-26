@@ -46,7 +46,33 @@ button:active{transform:scale(.96) translateY(2px);box-shadow:inset 0 4px 10px r
 .wa:active{box-shadow:inset 0 3px 8px rgba(0,0,0,.3)}
 .fld:focus-within{box-shadow:0 0 0 3px rgba(10,157,99,.25)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* ---- motion pack v1 ---- */
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes blob{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.08)}66%{transform:translate(-20px,15px) scale(.95)}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,20px) scale(.9)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+@keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--r));opacity:0}}
+@keyframes popNum{0%{transform:scale(1)}40%{transform:scale(1.25);color:#0a9d63}100%{transform:scale(1)}}
+main>.box{opacity:0;animation:rise .6s cubic-bezier(.2,.9,.3,1.1) forwards}
+main>.box:nth-child(2){animation-delay:.08s}main>.box:nth-child(3){animation-delay:.16s}main>.box:nth-child(4){animation-delay:.24s}
+#confirm{animation:rise .45s cubic-bezier(.2,1.4,.4,1) forwards!important;opacity:1}
+li{animation:slideIn .45s cubic-bezier(.2,.9,.3,1) both}
+.appicon{animation:floaty 3.5s ease-in-out infinite}
+.primary{background:linear-gradient(110deg,#0a7d4f 0%,#2fd08a 40%,#7ff0c0 50%,#2fd08a 60%,#0a7d4f 100%);background-size:200% 100%;animation:shimmer 4s linear infinite}
+.bg-blob{position:fixed;width:340px;height:340px;border-radius:50%;filter:blur(60px);opacity:.45;z-index:-1;animation:blob 18s ease-in-out infinite}
+button,.ex{position:relative;overflow:hidden}
+.rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);width:40px;height:40px;margin:-20px 0 0 -20px;transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(15,15,20,.82);color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:50;animation:toastIn .35s cubic-bezier(.2,1.4,.4,1)}
+.conf{position:fixed;top:-10px;width:9px;height:14px;border-radius:2px;z-index:60;pointer-events:none;animation:fall 1.4s cubic-bezier(.3,.6,.4,1) forwards}
+.bump{display:inline-block;animation:popNum .5s ease}
+.big{background:linear-gradient(90deg,#0b0b0f,#0a7d4f);-webkit-background-clip:text;background-clip:text;color:transparent}
+li.gone{transition:all .35s ease;opacity:0;transform:translateX(60px);max-height:0;padding:0}
 </style></head><body>
+<div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
 <header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book.</p></div></header>
 <main>
 <div class="box">
@@ -78,6 +104,14 @@ function parse(text){
   const total=price==null?null:(each?price*qty:price);const unit=price==null?null:(each?price:Math.round(price/qty*100)/100);
   return {time:new Date().toLocaleString("en-NG",{timeZone:"Africa/Lagos"}),type,item,qty,unit_price:unit,total,who,heard:text};
 }
+
+// ---- motion pack v1 ----
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>{d.style.transition="opacity .3s";d.style.opacity=0;setTimeout(()=>d.remove(),300)},1600)}
+function confetti(){const c=["#2fd08a","#ffb347","#ff6b6b","#6f9dff","#ffd84d"];for(let i=0;i<36;i++){const p=document.createElement("i");p.className="conf";p.style.left=Math.random()*100+"vw";p.style.background=c[i%c.length];p.style.setProperty("--dx",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");p.style.animationDelay=Math.random()*.25+"s";document.body.appendChild(p);setTimeout(()=>p.remove(),1800)}}
+function countUp(el,to){const from=+(el.dataset.v||0);el.dataset.v=to;if(from===to){el.textContent=naira(to);return}const t0=performance.now(),d=700;
+  (function f(t){const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.textContent=naira(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(f);else{el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}})(t0)}
+document.addEventListener("pointerdown",e=>{const b=e.target.closest("button,.ex");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span");s.className="rip";s.style.left=(e.clientX-r.left)+"px";s.style.top=(e.clientY-r.top)+"px";b.appendChild(s);setTimeout(()=>s.remove(),650);buzz(8)});
 let draft=null;const book=JSON.parse(localStorage.oja||"[]");
 function hear(){const t=document.getElementById("say").value.trim();if(!t)return;draft=parse(t);showConfirm()}
 function showConfirm(){const e=draft,c=document.getElementById("confirm");c.hidden=false;
@@ -89,18 +123,18 @@ function showConfirm(){const e=draft,c=document.getElementById("confirm");c.hidd
   <div class="row"><button class="no" onclick="cancel()"><span class="bi">✏️</span> No be am</button><button class="ok" onclick="confirmIt()"><span class="bi">✅</span> Correct!</button></div>`}
 function confirmIt(){const q=+fq.value||1,u=fu.value===""?null:+fu.value;draft.item=fi.value;draft.qty=q;draft.unit_price=u;draft.total=u==null?draft.total:u*q;
   if(draft.type==="debt")draft.who=fw.value;else if(["sale","purchase","debt"].includes(fw.value))draft.type=fw.value;
-  draft.status="confirmed";book.unshift(draft);localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
+  draft.status="confirmed";book.unshift(draft);confetti();buzz([12,40,12]);toast(draft.type==="debt"?"📝 Debt don enter book":"✅ E don enter book!");localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
 function cancel(){draft=null;document.getElementById("confirm").hidden=true}
 function waText(e){const d=e.time.split(",")[0];
   if(e.type==="debt")return `🧺 Oja Ledger\n${e.who||"You"}, you owe me ${naira(e.total)} for ${e.item||"goods"} (${d}).\nReply OK to agree. 🙏🏾`;
   if(e.type==="sale")return `🧺 Oja Ledger receipt\n${e.qty} ${e.item||"item"} @ ${naira(e.unit_price)}\nTotal: ${naira(e.total)} (${d})\nThank you, come again! 🙏🏾`;
   return `🧺 Oja Ledger\nI bought ${e.qty} ${e.item||"goods"} from you for ${naira(e.total)} (${d}). Please confirm. 🙏🏾`}
 function waLink(e){return "https://wa.me/?text="+encodeURIComponent(waText(e))}
-function del(i){if(window.confirm("Remove this entry?")){book.splice(i,1);localStorage.oja=JSON.stringify(book);render()}}
+function del(i){if(window.confirm("Remove this entry?")){const li=document.getElementById("book").children[i];buzz(20);if(li)li.classList.add("gone");setTimeout(()=>{book.splice(i,1);localStorage.oja=JSON.stringify(book);render();toast("🗑 Entry don comot")},330)}}
 function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
   book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
-  tSale.textContent=naira(s.sale);tBuy.textContent=naira(s.purchase);tDebt.textContent=naira(s.debt);
-  document.getElementById("book").innerHTML=book.map((e,i)=>`<li><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+  countUp(tSale,s.sale);countUp(tBuy,s.purchase);countUp(tDebt,s.debt);
+  document.getElementById("book").innerHTML=book.map((e,i)=>`<li style="animation-delay:${Math.min(i,8)*45}ms"><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
 ["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
 render();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
