@@ -71,20 +71,82 @@ button,.ex{position:relative;overflow:hidden}
 .bump{display:inline-block;animation:popNum .5s ease}
 .big{background:linear-gradient(90deg,#0b0b0f,#0a7d4f);-webkit-background-clip:text;background-clip:text;color:transparent}
 li.gone{transition:all .35s ease;opacity:0;transform:translateX(60px);max-height:0;padding:0}
-</style></head><body>
+
+/* ---- Mama's Shelf v3 ---- */
+.tabs{position:sticky;top:86px;z-index:4;display:flex;gap:6px;max-width:560px;margin:12px auto 0;padding:6px;border-radius:999px;background:rgba(255,255,255,.45);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 22px rgba(0,0,0,.08)}
+.tabs button{flex:1;padding:10px 8px;font-size:15px;background:transparent;box-shadow:none;color:var(--muted)}
+.tabs button.on{background:rgba(255,255,255,.9);color:var(--ink);box-shadow:inset 0 1px 0 #fff,0 4px 12px rgba(0,0,0,.1)}
+@media (max-width:600px){.tabs{margin:12px 16px 0}}
+body:not([data-tab="shelf"]) .tb-shelf,body:not([data-tab="set"]) .tb-set,body[data-tab="shelf"] .tb-book,body[data-tab="set"] .tb-book{display:none!important}
+label.snap{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:16px 18px;font-weight:700;font-size:18px;color:#fff;cursor:pointer;margin-top:12px}
+.ghost{background:rgba(255,255,255,.75);border:1px solid var(--edge);width:100%;margin-top:10px}
+.shprev{width:100%;max-height:240px;object-fit:contain;border-radius:20px;background:rgba(255,255,255,.6);border:1px solid var(--edge);display:block;margin-bottom:10px}
+.shstat{font-size:14px;color:var(--muted);padding:10px 14px;border-radius:16px;background:rgba(255,255,255,.6);border:1px solid var(--edge);margin-bottom:10px}
+.shstat.think{background:linear-gradient(110deg,rgba(255,255,255,.5) 0%,rgba(143,227,192,.6) 50%,rgba(255,255,255,.5) 100%);background-size:200% 100%;animation:shimmer 1.6s linear infinite}
+.thumb{width:52px;height:52px;flex:none;border-radius:14px;object-fit:cover;background:rgba(255,255,255,.8);border:1px solid var(--edge);display:grid;place-items:center;font-size:24px}
+.shrow{display:flex;gap:12px;align-items:center;min-width:0}.shrow>span{min-width:0}
+.low{display:inline-block;margin-left:6px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(145deg,#ff6b6b,#c62828);vertical-align:middle}
+.ed{display:inline-block;margin-top:6px;text-decoration:none;font-size:15px}
+.keyin{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:16px;border:1px solid var(--edge);background:rgba(255,255,255,.75);outline:none}
+.keyin:focus{box-shadow:0 0 0 4px rgba(10,157,99,.25)}
+.shlink{margin-top:8px;font-size:14px;color:#0a7d4f;font-weight:600}
+select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.75) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%235d6170%27 stroke-width=%272%27 fill=%27none%27/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px;color:var(--ink)}
+.tb-set a{color:#0a7d4f;font-weight:600}
+</style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
 <header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book.</p></div></header>
+<nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
-<div class="box">
+<div class="box tb-book">
   <label class="muted">Wetin happen for market? (voice coming soon, type for now)</label>
   <textarea id="say" rows="2" placeholder="I sell 3 tuber yam 2k each"></textarea>
   <div id="examples"></div>
   <button class="primary" onclick="hear()"><span class="bi">✍🏾</span> Write am for book</button>
 </div>
-<div class="box" id="confirm" hidden></div>
-<div class="box"><h3 style="margin-top:0">Today's money</h3>
+<div class="box tb-book" id="confirm" hidden></div>
+<div class="box tb-book"><h3 style="margin-top:0">Today's money</h3>
   <div class="totals"><div><div class="ticon sale">💰</div>Sold<b id="tSale">₦0</b></div><div><div class="ticon purchase">📦</div>Bought<b id="tBuy">₦0</b></div><div><div class="ticon debt">📝</div>Owed you<b id="tDebt">₦0</b></div></div></div>
-<div class="box"><h3 style="margin-top:0">Ledger</h3><ul id="book"></ul></div>
+<div class="box tb-book"><h3 style="margin-top:0">Ledger</h3><ul id="book"></ul></div>
+<div class="box tb-shelf"><h3 style="margin-top:0">🛒 Mama's Shelf</h3>
+  <div class="muted">Snap product, Llama go name am. You set price, stock go track itself.</div>
+  <label class="primary snap" for="snapIn"><span class="bi">📸</span> Snap product</label>
+  <input type="file" id="snapIn" accept="image/*" capture="environment" hidden>
+  <button class="ghost" onclick="shOpen()"><span class="bi">✍🏾</span> Add without photo</button>
+</div>
+<div class="box tb-shelf" id="shForm" hidden>
+  <img id="shPrev" class="shprev" alt="" hidden>
+  <div id="shStatus" class="shstat" hidden></div>
+  <div class="grid" style="margin-top:0">
+    <div class="fld" style="grid-column:1/-1"><span class="fi">🛍️</span><span>Product name<input class="f" id="shName" placeholder="Peak Milk 400g" autocomplete="off"></span></div>
+    <div class="fld"><span class="fi">🏷️</span><span>Price (₦)<input class="f" id="shPrice" inputmode="decimal" placeholder="1.8k or 1800" autocomplete="off"></span></div>
+    <div class="fld"><span class="fi">📦</span><span>Stock<input class="f" id="shStock" type="number" inputmode="numeric" min="0" placeholder="12"></span></div>
+    <div class="fld"><span class="fi">🗂️</span><span>Category<input class="f" id="shCat" placeholder="Provisions" autocomplete="off"></span></div>
+    <div class="fld"><span class="fi">🥫</span><span>Unit<input class="f" id="shUnit" placeholder="tin" autocomplete="off"></span></div>
+  </div>
+  <div class="row"><button class="no" onclick="shClose()"><span class="bi">✖️</span> Leave am</button><button class="ok" onclick="shSave()"><span class="bi">✅</span> Put for shelf</button></div>
+</div>
+<div class="box tb-shelf"><h3 style="margin-top:0">Today on the shelf</h3>
+  <div class="totals"><div><div class="ticon sale">🛍️</div>Items sold<b id="stQty">0</b></div><div><div class="ticon purchase">💰</div>Money in<b id="stMoney">₦0</b></div><div><div class="ticon debt">⚠️</div>Low stock<b id="stLow">0</b></div></div>
+  <div id="stLowList" class="muted" style="margin-top:10px"></div>
+</div>
+<div class="box tb-shelf"><h3 style="margin-top:0">Shelf</h3><ul id="shelfList"></ul></div>
+<div class="box tb-set"><h3 style="margin-top:0">⚙️ Settings</h3>
+  <label class="muted" for="provSel">AI that names your products</label>
+  <select id="provSel" class="keyin" style="margin-top:8px" onchange="setFill()"></select>
+  <label class="muted" for="modelSel" style="display:block;margin-top:12px">Model</label>
+  <select id="modelSel" class="keyin" style="margin-top:8px" onchange="setModelChange()"></select>
+  <input id="modelTxt" class="keyin" style="margin-top:8px" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="model name, e.g. meta-models/muse-spark" hidden>
+  <div id="baseRow" hidden><label class="muted" for="baseTxt" style="display:block;margin-top:12px">Base URL (OpenAI-compatible)</label>
+  <input id="baseTxt" class="keyin" style="margin-top:8px" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://your-provider.com/v1"></div>
+  <label class="muted" id="keyLbl" for="fwKey" style="display:block;margin-top:12px">API key</label>
+  <input id="fwKey" class="keyin" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:8px">
+  <div id="keyHelp" class="muted" style="margin-top:6px"></div>
+  <div id="keyState" class="muted" style="margin-top:8px"></div>
+  <div class="row"><button class="no" onclick="keyRemove()"><span class="bi">🗑</span> Remove key</button><button class="ok" onclick="keySave()"><span class="bi">💾</span> Save & use</button></div>
+  <button class="ghost" onclick="keyTest()"><span class="bi">🧪</span> Test it</button>
+  <p id="musePane" class="muted" hidden>🦙 Meta Muse Spark Open on Groq is in limited preview. Ask Groq for access at <a href="https://groq.com/muse-spark-open" target="_blank" rel="noopener">groq.com/muse-spark-open</a>, then pick it in Model above.</p>
+  <p class="muted">🔒 Each key stays on this phone only (saved inside this browser). Oja Ledger no dey send am anywhere, except straight to the AI you pick when you snap a product. No key? No wahala, you fit type the name yourself.</p>
+</div>
 </main>
 <script>
 const NUM={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,half:.5,dozen:12};
@@ -113,28 +175,160 @@ function countUp(el,to){const from=+(el.dataset.v||0);el.dataset.v=to;if(from===
   (function f(t){const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.textContent=naira(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(f);else{el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}})(t0)}
 document.addEventListener("pointerdown",e=>{const b=e.target.closest("button,.ex");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span");s.className="rip";s.style.left=(e.clientX-r.left)+"px";s.style.top=(e.clientY-r.top)+"px";b.appendChild(s);setTimeout(()=>s.remove(),650);buzz(8)});
 let draft=null;const book=JSON.parse(localStorage.oja||"[]");
-function hear(){const t=document.getElementById("say").value.trim();if(!t)return;draft=parse(t);showConfirm()}
+function hear(){const t=document.getElementById("say").value.trim();if(!t)return;draft=shelfPrefill(parse(t));showConfirm()}
 function showConfirm(){const e=draft,c=document.getElementById("confirm");c.hidden=false;
   const label={sale:"SALE 💰",purchase:"PURCHASE 📦",debt:"DEBT 📝"}[e.type];
   c.innerHTML=`<span class="chip ${e.type}">${label}</span><div class="big">${naira(e.total)}</div>
-  <div class="muted">You talk: "${e.heard}"</div>
+  <div class="muted">You talk: "${e.heard}"</div>${shelfNote(e)}
   <div class="grid"><div class="fld"><span class="fi">🛍️</span><span>Item<input class="f" id="fi" value="${e.item||""}"></span></div><div class="fld"><span class="fi">🔢</span><span>Qty<input class="f" id="fq" type="number" value="${e.qty}"></span></div>
   <div class="fld"><span class="fi">🏷️</span><span>Unit price<input class="f" id="fu" type="number" value="${e.unit_price??""}"></span></div><div class="fld"><span class="fi">${e.type==="debt"?"👤":"🔖"}</span><span>${e.type==="debt"?"Who owe":"Type"}<input class="f" id="fw" value="${e.type==="debt"?(e.who||""):e.type}"></span></div></div>
   <div class="row"><button class="no" onclick="cancel()"><span class="bi">✏️</span> No be am</button><button class="ok" onclick="confirmIt()"><span class="bi">✅</span> Correct!</button></div>`}
 function confirmIt(){const q=+fq.value||1,u=fu.value===""?null:+fu.value;draft.item=fi.value;draft.qty=q;draft.unit_price=u;draft.total=u==null?draft.total:u*q;
   if(draft.type==="debt")draft.who=fw.value;else if(["sale","purchase","debt"].includes(fw.value))draft.type=fw.value;
-  draft.status="confirmed";book.unshift(draft);confetti();buzz([12,40,12]);toast(draft.type==="debt"?"📝 Debt don enter book":"✅ E don enter book!");localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
+  shelfApply(draft);draft.status="confirmed";book.unshift(draft);confetti();buzz([12,40,12]);toast(draft.type==="debt"?"📝 Debt don enter book":"✅ E don enter book!");localStorage.oja=JSON.stringify(book);cancel();say.value="";render()}
 function cancel(){draft=null;document.getElementById("confirm").hidden=true}
 function waText(e){const d=e.time.split(",")[0];
   if(e.type==="debt")return `🧺 Oja Ledger\n${e.who||"You"}, you owe me ${naira(e.total)} for ${e.item||"goods"} (${d}).\nReply OK to agree. 🙏🏾`;
   if(e.type==="sale")return `🧺 Oja Ledger receipt\n${e.qty} ${e.item||"item"} @ ${naira(e.unit_price)}\nTotal: ${naira(e.total)} (${d})\nThank you, come again! 🙏🏾`;
   return `🧺 Oja Ledger\nI bought ${e.qty} ${e.item||"goods"} from you for ${naira(e.total)} (${d}). Please confirm. 🙏🏾`}
 function waLink(e){return "https://wa.me/?text="+encodeURIComponent(waText(e))}
-function del(i){if(window.confirm("Remove this entry?")){const li=document.getElementById("book").children[i];buzz(20);if(li)li.classList.add("gone");setTimeout(()=>{book.splice(i,1);localStorage.oja=JSON.stringify(book);render();toast("🗑 Entry don comot")},330)}}
+function del(i){if(window.confirm("Remove this entry?")){const li=document.getElementById("book").children[i];buzz(20);if(li)li.classList.add("gone");setTimeout(()=>{shelfRevert(book[i]);book.splice(i,1);localStorage.oja=JSON.stringify(book);render();toast("🗑 Entry don comot")},330)}}
 function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
   book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
-  countUp(tSale,s.sale);countUp(tBuy,s.purchase);countUp(tDebt,s.debt);
+  countUp(tSale,s.sale);countUp(tBuy,s.purchase);countUp(tDebt,s.debt);if(typeof renderShelfToday==="function")renderShelfToday();
   document.getElementById("book").innerHTML=book.map((e,i)=>`<li style="animation-delay:${Math.min(i,8)*45}ms"><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+// ---- Mama's Shelf v3: snap a product, Llama 4 names it, stock tracks itself ----
+const PROVIDERS={
+  groq:{name:"Groq",label:"Groq (free, no card)",url:"https://api.groq.com/openai/v1/chat/completions",keyHint:"gsk_...",getKey:"https://console.groq.com/keys",
+    models:[{id:"qwen/qwen3.8-27b",label:"Qwen 3.8 27B (free stand-in)"},{id:"meta-models/muse-spark-open",label:"Meta Muse Spark Open (needs Groq access)"}]},
+  fireworks:{name:"Fireworks",label:"Fireworks AI",url:"https://api.fireworks.ai/inference/v1/chat/completions",keyHint:"fw_...",getKey:"https://fireworks.ai/account/api-keys",
+    models:[{id:"accounts/fireworks/models/llama4-maverick-instruct-basic",label:"Meta Llama 4 Maverick"}]},
+  custom:{name:"Custom",label:"Custom (OpenAI-compatible, e.g. Meta API)",url:"",keyHint:"API key",getKey:"",models:[]}};
+const OTHER="__other__";
+const SHELF_PROMPT='You are helping a Nigerian market trader tag products on her shelf. Look at the product in this photo. Reply with JSON only, no other words: {"name": short product name the way Nigerian traders say it, with brand and size if you can see them (e.g. "Peak Milk 400g", "Indomie Chicken 70g", "Golden Penny Semovita 1kg"), "category": one or two words (e.g. "Provisions", "Drinks", "Toiletries", "Grains", "Foodstuff"), "unit": how it is sold (e.g. "tin", "sachet", "pack", "bottle", "carton", "bag", "piece")}. If you are not sure, give your best short guess.';
+const LS={get:k=>{try{return(localStorage.getItem(k)||"").trim()}catch(e){return""}},set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}}};
+function provId(){const p=LS.get("ojaProvider");return PROVIDERS[p]?p:"groq"}
+function provModel(p){const m=LS.get("ojaModel_"+p);return m||(PROVIDERS[p].models[0]||{}).id||""}
+function provUrl(p){if(p!=="custom")return PROVIDERS[p].url;const b=LS.get("ojaCustomBase").replace(/\/+$/,"");if(!b)return"";return/\/chat\/completions$/.test(b)?b:b+"/chat/completions"}
+function modelLabel(p,m){const hit=(PROVIDERS[p].models||[]).find(x=>x.id===m);const nm=hit?hit.label.replace(/\s*\(.*\)$/,""):String(m||"model").split("/").pop();return nm+" · "+PROVIDERS[p].name}
+function visionReady(){const p=provId();return !!(LS.get("ojaKey_"+p)&&provModel(p)&&provUrl(p))}
+let shelf=[];try{shelf=JSON.parse(localStorage.ojaShelf||"[]");if(!Array.isArray(shelf))shelf=[]}catch(e){shelf=[]}
+let shEditId=null,shThumb=null,shNameTouched=false,shSeq=0,shGuess=null;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function saveShelf(){try{localStorage.ojaShelf=JSON.stringify(shelf)}catch(e){toast("📵 Phone memory full. Delete some shelf items.")}}
+function parsePrice(t){if(t==null)return null;if(typeof t==="number")return isFinite(t)?t:null;
+  const s=String(t).toLowerCase().replace(/₦|naira|ngn|,|\s/g,"").replace(/^n(?=\d)/,"");const m=s.match(/^(\d+(?:\.\d+)?)(k|m)?$/);
+  if(!m)return null;const v=parseFloat(m[1])*(m[2]==="k"?1e3:m[2]==="m"?1e6:1);return Math.round(v*100)/100}
+const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const sing=w=>w.length>3&&w.endsWith("s")?w.slice(0,-1):w;
+function findShelf(item){const n=norm(item);if(!n)return null;let best=null,score=0;
+  const it=n.split(" ").filter(w=>w.length>=3).map(sing);
+  for(const p of shelf){const pn=norm(p.name);if(!pn)continue;let sc=0;
+    if(pn===n)sc=100;else if(pn.includes(n)||n.includes(pn))sc=50+Math.min(n.length,pn.length);
+    else{const pt=pn.split(" ").map(sing);const hit=it.filter(w=>pt.includes(w)).length;if(hit)sc=hit*10}
+    if(sc>score){score=sc;best=p}}
+  return best}
+function loadImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),i=new Image();i.onload=()=>{URL.revokeObjectURL(u);res(i)};i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("bad image"))};i.src=u})}
+function toJpeg(img,max,q){const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,s=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement("canvas");c.width=Math.max(1,Math.round(w*s));c.height=Math.max(1,Math.round(h*s));
+  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);return c.toDataURL("image/jpeg",q)}
+function shStat(t,think){shStatus.hidden=!t;shStatus.textContent=t||"";shStatus.classList.toggle("think",!!think)}
+function parseGuess(txt){let o=null;const t=String(txt||"").replace(/<think>[\s\S]*?(<\/think>|$)/gi,"").replace(/```(?:json)?/gi,"").trim();
+  try{o=JSON.parse(t)}catch(e){const m=t.match(/\{[\s\S]*\}/);if(m){try{o=JSON.parse(m[0])}catch(e2){}}}
+  if(!o||typeof o!=="object"){if(t&&t.length<=60&&!/[{}]/.test(t))o={name:t};else return null}
+  const clip=v=>typeof v==="string"?v.trim().slice(0,60):"";const g={name:clip(o.name),category:clip(o.category),unit:clip(o.unit)};return g.name?g:null}
+// one shared request for every provider (all OpenAI-compatible)
+async function aiChat(messages,maxTokens,json){const p=provId(),key=LS.get("ojaKey_"+p),model=provModel(p),url=provUrl(p);
+  if(!key)throw new Error("nokey");if(!url||!model){const e=new Error("nosetup");e.setup=true;throw e}
+  const go=async rf=>{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),35000);
+    try{const body={model,messages,max_tokens:maxTokens,temperature:.1};if(rf)body.response_format={type:"json_object"};
+      return await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json","Authorization":"Bearer "+key},body:JSON.stringify(body),signal:ac.signal})}finally{clearTimeout(tm)}};
+  let r=await go(json);if(json&&(r.status===400||r.status===422))r=await go(false);
+  if(!r.ok){let msg="";try{const d=await r.json();msg=(d&&d.error&&(d.error.message||d.error.code))||""}catch(x){}const err=new Error("http "+r.status);err.status=r.status;err.detail=String(msg).slice(0,140);throw err}
+  const d=await r.json();const c=d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+  return{text:Array.isArray(c)?c.map(x=>x.text||"").join(""):String(c||""),label:modelLabel(p,model)}}
+async function askLlama(dataUrl){const r=await aiChat([{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:SHELF_PROMPT}]}],1024,true);
+  const g=parseGuess(r.text);if(g)g.by=r.label;return g}
+function shOpen(p){shEditId=p?p.id:null;shGuess=null;shThumb=p?p.thumb||null:null;shNameTouched=!!p;shForm.hidden=false;
+  shName.value=p?p.name:"";shPrice.value=p&&p.price!=null?p.price:"";shStock.value=p?p.stock:"";shCat.value=p?p.category||"":"";shUnit.value=p?p.unit||"":"";
+  shPrev.hidden=!shThumb;if(shThumb)shPrev.src=shThumb;shStat(p?"✏️ Change wetin you want, then save.":"");
+  shForm.scrollIntoView({behavior:"smooth",block:"start"});if(!p)setTimeout(()=>shName.focus(),300)}
+function shClose(){shForm.hidden=true;shEditId=null;shThumb=null;shSeq++}
+async function shSnap(file){if(!file)return;const editing=shEditId?shelf.find(p=>p.id===shEditId):null;shOpen(editing||null);
+  shNameTouched=!!editing;const my=++shSeq;let full;
+  try{const img=await loadImg(file);full=toJpeg(img,512,.8);shThumb=toJpeg(img,112,.7);shPrev.src=full;shPrev.hidden=false}
+  catch(e){shStat("📷 That photo no gree open. Type the name yourself.");return}
+  if(!visionReady()){shStat("🔑 No AI key yet, so type the name yourself. (Add a free Groq key for ⚙️ Settings make AI help you.)");shName.focus();return}
+  shStat("🦙 "+modelLabel(provId(),provModel(provId()))+" dey look am…",true);
+  try{const g=await askLlama(full);if(my!==shSeq)return;
+    if(!g){shStat("🤔 AI no sure. Type the name yourself.");return}shGuess=g;
+    if(!shNameTouched||!shName.value.trim())shName.value=g.name;if(!shCat.value)shCat.value=g.category;if(!shUnit.value)shUnit.value=g.unit;
+    shStat("🦙 "+g.by+" think say na “"+g.name+"”. Change am if e no correct, then put price.");buzz(10);if(!shPrice.value)shPrice.focus()}
+  catch(e){if(my!==shSeq)return;const s=e&&e.status;
+    const pn=PROVIDERS[provId()].name;
+    shStat(s===401||s===403?"🔑 "+pn+" no accept the key. Check am for ⚙️ Settings. Type the name yourself for now."
+      :s===404||(e&&/decommission|not.?found|does not exist|access/i.test(e.detail||""))?"🧩 "+pn+" no get that model for your account. Pick another model for ⚙️ Settings. Type the name yourself for now."
+      :!navigator.onLine?"📴 No network, so type the name yourself. E go still save.":"🦙 AI no fit see am now. Type the name yourself.");}}
+function shSave(){const name=shName.value.trim().replace(/\s+/g," ");if(!name){toast("🛍️ Put product name");shName.focus();return}
+  const price=parsePrice(shPrice.value);if(price==null){toast("🏷️ Put price like 1.8k or 1800");shPrice.focus();return}
+  let stock=parseInt(shStock.value,10);if(!isFinite(stock)||stock<0)stock=0;
+  const data={name,price,stock,category:shCat.value.trim().slice(0,40),unit:shUnit.value.trim().slice(0,20),thumb:shThumb};
+  const ex=shEditId&&shelf.find(p=>p.id===shEditId);
+  if(shGuess){data.taggedBy=shGuess.by;data.edited=norm(shGuess.name)!==norm(name)}else if(!ex){data.taggedBy="";data.edited=false}
+  if(ex)Object.assign(ex,data);else shelf.unshift(Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),added:new Date().toISOString()},data));
+  saveShelf();confetti();buzz([12,40,12]);toast(ex?"✏️ Shelf don update":"🏷️ E don enter shelf!");shClose();renderShelf()}
+function shEdit(id){const p=shelf.find(x=>x.id===id);if(p)shOpen(p)}
+function shDel(id){const p=shelf.find(x=>x.id===id);if(!p||!window.confirm("Remove "+p.name+" from shelf?"))return;
+  const li=document.getElementById("sh-"+id);buzz(20);if(li)li.classList.add("gone");
+  setTimeout(()=>{shelf=shelf.filter(x=>x.id!==id);saveShelf();renderShelf();toast("🗑 E don comot for shelf")},330)}
+function renderShelf(){
+  shelfList.innerHTML=shelf.map((p,i)=>`<li id="sh-${esc(p.id)}" style="animation-delay:${Math.min(i,8)*45}ms"><span class="shrow">${p.thumb?`<img class="thumb" src="${esc(p.thumb)}" alt="">`:`<span class="thumb">🛍️</span>`}<span><b>${esc(p.name)}</b>${p.stock<=3?`<span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}<br><span class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.category?" · "+esc(p.category):""}<br>${p.taggedBy?"🦙 "+esc(p.taggedBy)+(p.edited?" · you edited":""):"✍🏾 typed by you"}</span></span></span><span style="text-align:right;white-space:nowrap"><b>${naira(p.price)}</b><br><a class="ed" href="#" onclick="shEdit('${esc(p.id)}');return false">✏️</a> <a class="del" href="#" onclick="shDel('${esc(p.id)}');return false">🗑</a></span></li>`).join("")
+    ||'<span class="muted">Shelf empty. Snap your first product! 📸</span>';
+  renderShelfToday()}
+function renderShelfToday(){if(typeof stQty==="undefined")return;const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});let q=0,m=0;
+  book.forEach(e=>{if(e.type==="sale"&&e.shelfId&&String(e.time||"").startsWith(today)){q+=+e.qty||0;m+=+e.total||0}});
+  const low=shelf.filter(p=>p.stock<=3);stQty.textContent=Math.round(q*100)/100;countUp(stMoney,m);stLow.textContent=low.length;
+  stLowList.innerHTML=low.length?"⚠️ Restock soon: "+low.map(p=>`<b>${esc(p.name)}</b> (${p.stock})`).join(", "):(shelf.length?"✅ All stock dey okay.":"")}
+// link a ledger draft to a shelf product (prefill price for sales with no price)
+function shelfPrefill(d){if(!d||(d.type!=="sale"&&d.type!=="purchase"))return d;const p=findShelf(d.item);if(!p)return d;
+  d.shelfId=p.id;if(d.type==="sale"&&d.unit_price==null&&p.price!=null){d.unit_price=p.price;d.total=Math.round(p.price*(d.qty||1)*100)/100;d.priceFromShelf=true}return d}
+function shelfNote(e){if(!e.shelfId)return"";const p=shelf.find(x=>x.id===e.shelfId);if(!p)return"";
+  return `<div class="shlink">🛒 Shelf: ${esc(p.name)} · ${p.stock} left${e.priceFromShelf?" · price from shelf":""}</div>`}
+// called when a ledger entry is confirmed: sale cuts stock, purchase adds stock
+function shelfApply(d){try{if(d.type!=="sale"&&d.type!=="purchase"){delete d.shelfId;return}
+  const p=findShelf(d.item);if(!p){delete d.shelfId;return}
+  if(d.type==="sale"&&d.unit_price==null&&p.price!=null){d.unit_price=p.price;d.total=Math.round(p.price*(d.qty||1)*100)/100}
+  const q=Math.max(0,+d.qty||0),before=p.stock;p.stock=d.type==="sale"?Math.max(0,before-q):before+q;
+  d.shelfId=p.id;d.stockDelta=p.stock-before;saveShelf();renderShelf();
+  if(d.type==="sale"&&p.stock<=3)setTimeout(()=>toast(p.stock<=0?"⚠️ "+p.name+" don finish!":"⚠️ "+p.name+" remain "+p.stock+" only"),1800)}catch(e){}}
+function shelfRevert(e){try{if(!e||!e.shelfId||!e.stockDelta)return;const p=shelf.find(x=>x.id===e.shelfId);if(!p)return;p.stock=Math.max(0,p.stock-e.stockDelta);saveShelf();renderShelf()}catch(x){}}
+// settings: provider dropdown, a separate key per provider, all in localStorage only
+function setFill(){const p=provSel.value;const P=PROVIDERS[p];
+  modelSel.innerHTML=P.models.map(m=>`<option value="${esc(m.id)}">${esc(m.label)}</option>`).join("")+`<option value="${OTHER}">${P.models.length?"Other model (type name)":"Type model name"}</option>`;
+  const cur=LS.get("ojaModel_"+p)||(P.models[0]||{}).id||"";const preset=P.models.some(m=>m.id===cur);
+  modelSel.value=preset?cur:OTHER;modelTxt.value=preset?"":cur;modelSel.hidden=!P.models.length;modelTxt.hidden=preset;
+  baseRow.hidden=p!=="custom";baseTxt.value=LS.get("ojaCustomBase");fwKey.placeholder=P.keyHint;fwKey.value="";
+  keyLbl.textContent=P.name+" API key";keyHelp.innerHTML=P.getKey?`Get a key: <a href="${P.getKey}" target="_blank" rel="noopener">${P.getKey.replace("https://","")}</a>`:"Paste the base URL, model name and key from your provider (e.g. the Meta Model API).";
+  musePane.hidden=p!=="groq";keyShow()}
+function keyShow(){const p=provSel.value,k=LS.get("ojaKey_"+p);keyState.textContent=(k?"✅ "+PROVIDERS[p].name+" key saved on this phone (ends …"+k.slice(-4)+")":"No "+PROVIDERS[p].name+" key yet.")+(provId()===p?" · In use now":"")}
+function setModelChange(){modelTxt.hidden=modelSel.value!==OTHER;if(!modelTxt.hidden)modelTxt.focus()}
+function keySave(silent){const p=provSel.value,v=fwKey.value.trim();
+  if(v&&v.length<10){toast("🔑 Paste the full key first");return false}
+  if(v)LS.set("ojaKey_"+p,v);
+  const m=(modelSel.hidden||modelSel.value===OTHER)?modelTxt.value.trim():modelSel.value;LS.set("ojaModel_"+p,m);
+  if(p==="custom")LS.set("ojaCustomBase",baseTxt.value.trim());
+  LS.set("ojaProvider",p);fwKey.value="";keyShow();if(!silent)toast("💾 Saved. Using "+modelLabel(p,provModel(p)));return true}
+function keyRemove(){const p=provSel.value;LS.set("ojaKey_"+p,"");keyShow();toast("🗑 "+PROVIDERS[p].name+" key don comot")}
+async function keyTest(){if(!keySave(true))return;const p=provId();if(!LS.get("ojaKey_"+p)){toast("🔑 No key to test");return}
+  keyState.textContent="🧪 Testing "+modelLabel(p,provModel(p))+"…";
+  try{await aiChat([{role:"user",content:"Reply with the single word: OK"}],300,false);keyState.textContent="✅ Key dey work! "+modelLabel(p,provModel(p))+" ready.";buzz([12,40,12])}
+  catch(e){keyState.textContent=e&&e.setup?"⚠️ Fill the base URL and model name first."
+    :e&&(e.status===401||e.status===403)?"❌ "+PROVIDERS[p].name+" no accept this key"+(e.detail?" ("+e.detail+")":"")+". Check am and paste again."
+    :"⚠️ "+PROVIDERS[p].name+" said "+(e&&e.status?"error "+e.status:"no network")+(e&&e.detail?": "+e.detail:"")+"."}}
+function tab(t){if(!["book","shelf","set"].includes(t))t="book";document.body.dataset.tab=t;document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));try{localStorage.ojaTab=t}catch(e){}}
+snapIn.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e.target.value="";shSnap(f).catch(()=>shStat("Type the name yourself."))});
+shName.addEventListener("input",()=>{shNameTouched=true});
+provSel.innerHTML=Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join("");provSel.value=provId();setFill();renderShelf();tab(localStorage.ojaTab||"book");
 ["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
 render();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
