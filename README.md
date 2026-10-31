@@ -46,3 +46,9 @@ Powered by **Meta Muse Spark / Llama 4 via the Meta API, Fireworks, or Groq** (p
 - [x] Mama's Shelf: snap-and-tag products, prices and self-updating stock
 - [ ] Voice → text with omniASR
 - [ ] Llama upgrade for messy, real-world sentences
+
+
+## Free Meta model, no key (v5)
+Mama's Shelf now defaults to **Meta Muse Spark Open** through [Puter.js](https://developer.puter.com/ai/meta/muse-spark-open/) (`meta/muse-spark-open`). No API key or card: the first snap shows a one-time free Puter sign-in. Groq, Fireworks and a custom OpenAI-compatible endpoint (e.g. the Meta Model API) are still in Settings.
+
+Voice: tap 🎤 on the Book tab; it uses the phone's built-in speech recognition (en-NG) and fills the entry for confirmation.

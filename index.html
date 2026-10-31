@@ -152,8 +152,9 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
   <div id="keyState" class="muted" style="margin-top:8px"></div>
   <div class="row"><button class="no" onclick="keyRemove()"><span class="bi">🗑</span> Remove key</button><button class="ok" onclick="keySave()"><span class="bi">💾</span> Save & use</button></div>
   <button class="ghost" onclick="keyTest()"><span class="bi">🧪</span> Test it</button>
+  <p id="puterPane" class="muted" hidden>🦙 Free Meta Muse through Puter. First time you snap or test, a small Puter window go ask you to sign in or make a free account. After that, e go just work.</p>
   <p id="musePane" class="muted" hidden>🦙 Meta Muse Spark Open on Groq is in limited preview. Ask Groq for access at <a href="https://groq.com/muse-spark-open" target="_blank" rel="noopener">groq.com/muse-spark-open</a>, then pick it in Model above.</p>
-  <p class="muted">🔒 Each key stays on this phone only (saved inside this browser). Oja Ledger no dey send am anywhere, except straight to the AI you pick when you snap a product. No key? No wahala, you fit type the name yourself.</p>
+  <p class="muted">🔒 Each key stays on this phone only (saved inside this browser). Oja Ledger no dey send am anywhere, except straight to the AI you pick when you snap a product. Meta via Puter no need key. No AI at all? No wahala, you fit type the name yourself.</p>
 </div>
 </main>
 <script>
@@ -207,6 +208,8 @@ function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLo
   document.getElementById("book").innerHTML=book.map((e,i)=>`<li style="animation-delay:${Math.min(i,8)*45}ms"><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
 // ---- Mama's Shelf v3: snap a product, Llama 4 names it, stock tracks itself ----
 const PROVIDERS={
+  puter:{name:"Meta via Puter",label:"Meta Muse (free, no key, via Puter)",url:"puter",keyHint:"",getKey:"",nokey:true,
+    models:[{id:"meta/muse-spark-open",label:"Meta Muse Spark Open"},{id:"meta/muse-spark-1.3",label:"Meta Muse Spark 1.3"},{id:"meta/muse-glimmer-30b",label:"Meta Muse Glimmer 30B"}]},
   groq:{name:"Groq",label:"Groq (free, no card)",url:"https://api.groq.com/openai/v1/chat/completions",keyHint:"gsk_...",getKey:"https://console.groq.com/keys",
     models:[{id:"qwen/qwen3.8-27b",label:"Qwen 3.8 27B (free stand-in)"},{id:"meta-models/muse-spark-open",label:"Meta Muse Spark Open (needs Groq access)"}]},
   fireworks:{name:"Fireworks",label:"Fireworks AI",url:"https://api.fireworks.ai/inference/v1/chat/completions",keyHint:"fw_...",getKey:"https://fireworks.ai/account/api-keys",
@@ -215,11 +218,11 @@ const PROVIDERS={
 const OTHER="__other__";
 const SHELF_PROMPT='You are helping a Nigerian market trader tag products on her shelf. Look at the product in this photo. Reply with JSON only, no other words: {"name": short product name the way Nigerian traders say it, with brand and size if you can see them (e.g. "Peak Milk 400g", "Indomie Chicken 70g", "Golden Penny Semovita 1kg"), "category": one or two words (e.g. "Provisions", "Drinks", "Toiletries", "Grains", "Foodstuff"), "unit": how it is sold (e.g. "tin", "sachet", "pack", "bottle", "carton", "bag", "piece")}. If you are not sure, give your best short guess.';
 const LS={get:k=>{try{return(localStorage.getItem(k)||"").trim()}catch(e){return""}},set:(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}}};
-function provId(){const p=LS.get("ojaProvider");return PROVIDERS[p]?p:"groq"}
+function provId(){const p=LS.get("ojaProvider");return PROVIDERS[p]?p:"puter"}
 function provModel(p){const m=LS.get("ojaModel_"+p);return m||(PROVIDERS[p].models[0]||{}).id||""}
 function provUrl(p){if(p!=="custom")return PROVIDERS[p].url;const b=LS.get("ojaCustomBase").replace(/\/+$/,"");if(!b)return"";return/\/chat\/completions$/.test(b)?b:b+"/chat/completions"}
 function modelLabel(p,m){const hit=(PROVIDERS[p].models||[]).find(x=>x.id===m);const nm=hit?hit.label.replace(/\s*\(.*\)$/,""):String(m||"model").split("/").pop();return nm+" · "+PROVIDERS[p].name}
-function visionReady(){const p=provId();return !!(LS.get("ojaKey_"+p)&&provModel(p)&&provUrl(p))}
+function visionReady(){const p=provId();if(PROVIDERS[p].nokey)return !!provModel(p);return !!(LS.get("ojaKey_"+p)&&provModel(p)&&provUrl(p))}
 let shelf=[];try{shelf=JSON.parse(localStorage.ojaShelf||"[]");if(!Array.isArray(shelf))shelf=[]}catch(e){shelf=[]}
 let shEditId=null,shThumb=null,shNameTouched=false,shSeq=0,shGuess=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -246,7 +249,16 @@ function parseGuess(txt){let o=null;const t=String(txt||"").replace(/<think>[\s\
   if(!o||typeof o!=="object"){if(t&&t.length<=60&&!/[{}]/.test(t))o={name:t};else return null}
   const clip=v=>typeof v==="string"?v.trim().slice(0,60):"";const g={name:clip(o.name),category:clip(o.category),unit:clip(o.unit)};return g.name?g:null}
 // one shared request for every provider (all OpenAI-compatible)
+let puterP=null;
+function loadPuter(){if(window.puter&&puter.ai)return Promise.resolve(puter);if(puterP)return puterP;
+  puterP=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://js.puter.com/v2/";sc.onload=()=>res(window.puter);sc.onerror=()=>{puterP=null;rej(new Error("puter load"))};document.head.appendChild(sc)});return puterP}
+async function puterChat(messages,maxTokens,model){const P=await loadPuter();
+  let r;try{r=await P.ai.chat(messages,{model,max_tokens:maxTokens,temperature:.1})}
+  catch(e){const err=new Error("puter");err.detail=String((e&&(e.message||(e.error&&e.error.message)))||e||"").slice(0,140);throw err}
+  const c=r&&r.message&&r.message.content;const text=typeof c==="string"?c:Array.isArray(c)?c.map(x=>x.text||"").join(""):String(r||"");
+  return{text,label:modelLabel("puter",model)}}
 async function aiChat(messages,maxTokens,json){const p=provId(),key=LS.get("ojaKey_"+p),model=provModel(p),url=provUrl(p);
+  if(PROVIDERS[p].nokey)return puterChat(messages,maxTokens,model);
   if(!key)throw new Error("nokey");if(!url||!model){const e=new Error("nosetup");e.setup=true;throw e}
   const go=async rf=>{const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),35000);
     try{const body={model,messages,max_tokens:maxTokens,temperature:.1};if(rf)body.response_format={type:"json_object"};
@@ -266,7 +278,7 @@ async function shSnap(file){if(!file)return;const editing=shEditId?shelf.find(p=
   shNameTouched=!!editing;const my=++shSeq;let full;
   try{const img=await loadImg(file);full=toJpeg(img,512,.8);shThumb=toJpeg(img,112,.7);shPrev.src=full;shPrev.hidden=false}
   catch(e){shStat("📷 That photo no gree open. Type the name yourself.");return}
-  if(!visionReady()){shStat("🔑 No AI key yet, so type the name yourself. (Add a free Groq key for ⚙️ Settings make AI help you.)");shName.focus();return}
+  if(!visionReady()){shStat("🔑 No AI key yet, so type the name yourself. (Pick an AI for ⚙️ Settings make it help you.)");shName.focus();return}
   shStat("🦙 "+modelLabel(provId(),provModel(provId()))+" dey look am…",true);
   try{const g=await askLlama(full);if(my!==shSeq)return;
     if(!g){shStat("🤔 AI no sure. Type the name yourself.");return}shGuess=g;
@@ -276,6 +288,7 @@ async function shSnap(file){if(!file)return;const editing=shEditId?shelf.find(p=
     const pn=PROVIDERS[provId()].name;
     shStat(s===401||s===403?"🔑 "+pn+" no accept the key. Check am for ⚙️ Settings. Type the name yourself for now."
       :s===404||(e&&/decommission|not.?found|does not exist|access/i.test(e.detail||""))?"🧩 "+pn+" no get that model for your account. Pick another model for ⚙️ Settings. Type the name yourself for now."
+      :e&&e.message==="puter"?"🦙 Puter no answer"+(e.detail?" ("+e.detail+")":"")+". If a sign-in window came, finish am and snap again. Type the name yourself for now."
       :!navigator.onLine?"📴 No network, so type the name yourself. E go still save.":"🦙 AI no fit see am now. Type the name yourself.");}}
 function shSave(){const name=shName.value.trim().replace(/\s+/g," ");if(!name){toast("🛍️ Put product name");shName.focus();return}
   const price=parsePrice(shPrice.value);if(price==null){toast("🏷️ Put price like 1.8k or 1800");shPrice.focus();return}
@@ -317,8 +330,8 @@ function setFill(){const p=provSel.value;const P=PROVIDERS[p];
   modelSel.value=preset?cur:OTHER;modelTxt.value=preset?"":cur;modelSel.hidden=!P.models.length;modelTxt.hidden=preset;
   baseRow.hidden=p!=="custom";baseTxt.value=LS.get("ojaCustomBase");fwKey.placeholder=P.keyHint;fwKey.value="";
   keyLbl.textContent=P.name+" API key";keyHelp.innerHTML=P.getKey?`Get a key: <a href="${P.getKey}" target="_blank" rel="noopener">${P.getKey.replace("https://","")}</a>`:"Paste the base URL, model name and key from your provider (e.g. the Meta Model API).";
-  musePane.hidden=p!=="groq";keyShow()}
-function keyShow(){const p=provSel.value,k=LS.get("ojaKey_"+p);keyState.textContent=(k?"✅ "+PROVIDERS[p].name+" key saved on this phone (ends …"+k.slice(-4)+")":"No "+PROVIDERS[p].name+" key yet.")+(provId()===p?" · In use now":"")}
+  musePane.hidden=p!=="groq";const nk=!!P.nokey;[keyLbl,fwKey,keyHelp].forEach(x=>x.hidden=nk);puterPane.hidden=!nk;keyShow()}
+function keyShow(){const p=provSel.value,k=LS.get("ojaKey_"+p);if(PROVIDERS[p].nokey){keyState.textContent="✅ No key needed."+(provId()===p?" · In use now":" Tap Save & use.");return}keyState.textContent=(k?"✅ "+PROVIDERS[p].name+" key saved on this phone (ends …"+k.slice(-4)+")":"No "+PROVIDERS[p].name+" key yet.")+(provId()===p?" · In use now":"")}
 function setModelChange(){modelTxt.hidden=modelSel.value!==OTHER;if(!modelTxt.hidden)modelTxt.focus()}
 function keySave(silent){const p=provSel.value,v=fwKey.value.trim();
   if(v&&v.length<10){toast("🔑 Paste the full key first");return false}
@@ -327,11 +340,12 @@ function keySave(silent){const p=provSel.value,v=fwKey.value.trim();
   if(p==="custom")LS.set("ojaCustomBase",baseTxt.value.trim());
   LS.set("ojaProvider",p);fwKey.value="";keyShow();if(!silent)toast("💾 Saved. Using "+modelLabel(p,provModel(p)));return true}
 function keyRemove(){const p=provSel.value;LS.set("ojaKey_"+p,"");keyShow();toast("🗑 "+PROVIDERS[p].name+" key don comot")}
-async function keyTest(){if(!keySave(true))return;const p=provId();if(!LS.get("ojaKey_"+p)){toast("🔑 No key to test");return}
+async function keyTest(){if(!keySave(true))return;const p=provId();if(!PROVIDERS[p].nokey&&!LS.get("ojaKey_"+p)){toast("🔑 No key to test");return}
   keyState.textContent="🧪 Testing "+modelLabel(p,provModel(p))+"…";
   try{await aiChat([{role:"user",content:"Reply with the single word: OK"}],300,false);keyState.textContent="✅ Key dey work! "+modelLabel(p,provModel(p))+" ready.";buzz([12,40,12])}
   catch(e){keyState.textContent=e&&e.setup?"⚠️ Fill the base URL and model name first."
     :e&&(e.status===401||e.status===403)?"❌ "+PROVIDERS[p].name+" no accept this key"+(e.detail?" ("+e.detail+")":"")+". Check am and paste again."
+    :e&&e.message==="puter"?"⚠️ Puter: "+(e.detail||"no answer")+". If a sign-in window opened, finish am and test again."
     :"⚠️ "+PROVIDERS[p].name+" said "+(e&&e.status?"error "+e.status:"no network")+(e&&e.detail?": "+e.detail:"")+"."}}
 function tab(t){if(!["book","shelf","set"].includes(t))t="book";document.body.dataset.tab=t;document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));try{localStorage.ojaTab=t}catch(e){}}
 snapIn.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e.target.value="";shSnap(f).catch(()=>shStat("Type the name yourself."))});
