@@ -92,14 +92,19 @@ label.snap{display:flex;align-items:center;justify-content:center;gap:8px;border
 .shlink{margin-top:8px;font-size:14px;color:#0a7d4f;font-weight:600}
 select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.75) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%235d6170%27 stroke-width=%272%27 fill=%27none%27/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px;color:var(--ink)}
 .tb-set a{color:#0a7d4f;font-weight:600}
+.sayrow{display:flex;gap:10px;align-items:stretch;margin-top:8px}.sayrow textarea{flex:1}
+.mic{flex:none;width:64px;border-radius:20px;font-size:26px;padding:0;background:linear-gradient(145deg,#2fd08a,#0a7d4f);color:#fff}
+.mic.on{background:linear-gradient(145deg,#ff6b6b,#c62828);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 12px rgba(198,40,40,0)}}
 </style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
 <header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book.</p></div></header>
 <nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
 <div class="box tb-book">
-  <label class="muted">Wetin happen for market? (voice coming soon, type for now)</label>
-  <textarea id="say" rows="2" placeholder="I sell 3 tuber yam 2k each"></textarea>
+  <label class="muted">Wetin happen for market? Tap 🎤 and talk, or type.</label>
+  <div class="sayrow"><textarea id="say" rows="2" placeholder="I sell 3 tuber yam 2k each"></textarea><button id="micBtn" class="mic" type="button" onclick="micToggle()" aria-label="Talk">🎤</button></div>
+  <div id="micStat" class="muted" style="margin-top:6px" hidden></div>
   <div id="examples"></div>
   <button class="primary" onclick="hear()"><span class="bi">✍🏾</span> Write am for book</button>
 </div>
@@ -129,7 +134,10 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
   <div class="totals"><div><div class="ticon sale">🛍️</div>Items sold<b id="stQty">0</b></div><div><div class="ticon purchase">💰</div>Money in<b id="stMoney">₦0</b></div><div><div class="ticon debt">⚠️</div>Low stock<b id="stLow">0</b></div></div>
   <div id="stLowList" class="muted" style="margin-top:10px"></div>
 </div>
-<div class="box tb-shelf"><h3 style="margin-top:0">Shelf</h3><ul id="shelfList"></ul></div>
+<div class="box tb-shelf"><h3 style="margin-top:0">Shelf</h3><ul id="shelfList"></ul>
+  <input id="shopName" class="keyin" style="margin-top:12px" placeholder="Your shop name (e.g. Mama Chidi Provisions)" autocomplete="off">
+  <a id="waList" class="primary snap" style="text-decoration:none;background:linear-gradient(145deg,#3ee07a,#1ea952)" target="_blank" rel="noopener" onclick="return waListGo()"><span class="bi">📲</span> Send price list on WhatsApp</a>
+  <div class="muted" style="margin-top:6px">Customers see wetin dey shelf, the price, and reply to order. Finished items no go show.</div></div>
 <div class="box tb-set"><h3 style="margin-top:0">⚙️ Settings</h3>
   <label class="muted" for="provSel">AI that names your products</label>
   <select id="provSel" class="keyin" style="margin-top:8px" onchange="setFill()"></select>
@@ -330,6 +338,29 @@ snapIn.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e
 shName.addEventListener("input",()=>{shNameTouched=true});
 provSel.innerHTML=Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join("");provSel.value=provId();setFill();renderShelf();tab(localStorage.ojaTab||"book");
 ["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
+
+// ---- v4: voice (phone's own speech engine, free) + WhatsApp price list ----
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,recOn=false,recBase="";
+function micStat(t){micStat_el.hidden=!t;micStat_el.textContent=t||""}
+const micStat_el=document.getElementById("micStat");
+if(!SR){micBtn.style.opacity=.45}
+function micToggle(){if(!SR){micStat("🎤 This browser no support voice. Open Oja Ledger for Chrome on Android, or type.");return}
+  if(recOn){rec&&rec.stop();return}
+  rec=new SR();rec.lang="en-NG";rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;recBase=say.value.trim();
+  rec.onstart=()=>{recOn=true;micBtn.classList.add("on");micBtn.textContent="⏹";micStat("👂🏾 I dey hear you… talk am like 'I sell 3 tuber yam 2k each'");buzz(15)};
+  rec.onresult=e=>{let t="";for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;say.value=(recBase?recBase+" ":"")+t.trim();
+    if(e.results[e.results.length-1].isFinal){micStat("✅ I hear: “"+t.trim()+"”");setTimeout(()=>{if(say.value.trim())hear()},350)}};
+  rec.onerror=e=>{micStat(e.error==="not-allowed"||e.error==="service-not-allowed"?"🎤 Allow microphone for this site, then try again.":e.error==="no-speech"?"🤫 I no hear anything. Tap 🎤 and talk again.":e.error==="network"?"📴 Voice need network. Type for now.":"🎤 Voice no work this time. Try again or type.")};
+  rec.onend=()=>{recOn=false;micBtn.classList.remove("on");micBtn.textContent="🎤"};
+  try{rec.start()}catch(e){micStat("🎤 Voice no start. Try again.")}}
+function waListText(){const shop=shopName.value.trim();const items=shelf.filter(p=>p.stock>0);
+  if(!items.length)return null;const groups={};items.forEach(p=>{const c=p.category||"Other";(groups[c]=groups[c]||[]).push(p)});
+  let t="🧺 "+(shop||"My shop")+" · Price list\n"+new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos",day:"numeric",month:"short",year:"numeric"})+"\n";
+  Object.keys(groups).sort().forEach(c=>{t+="\n*"+c+"*\n";groups[c].forEach(p=>{t+="• "+p.name+": "+naira(p.price)+(p.unit?" per "+p.unit:"")+(p.stock<=3?" (few left)":"")+"\n"})});
+  return t+"\nReply with wetin you want and how many. 🙏🏾\n_Made with Oja Ledger_"}
+function waListGo(){LS.set("ojaShop",shopName.value.trim());const t=waListText();if(!t){toast("🛒 Add products with stock first");return false}
+  waList.href="https://wa.me/?text="+encodeURIComponent(t);buzz(10);return true}
+shopName.value=LS.get("ojaShop");shopName.addEventListener("change",()=>LS.set("ojaShop",shopName.value.trim()));
 render();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 function net(){let b=document.getElementById("offb");if(!navigator.onLine){if(!b){b=document.createElement("div");b.id="offb";b.className="off";b.textContent="📴 No network? No wahala. Oja still dey work.";document.body.appendChild(b)}}else if(b)b.remove()}
