@@ -52,3 +52,6 @@ Powered by **Meta Muse Spark / Llama 4 via the Meta API, Fireworks, or Groq** (p
 Mama's Shelf now defaults to **Meta Muse Spark Open** through [Puter.js](https://developer.puter.com/ai/meta/muse-spark-open/) (`meta/muse-spark-open`). No API key or card: the first snap shows a one-time free Puter sign-in. Groq, Fireworks and a custom OpenAI-compatible endpoint (e.g. the Meta Model API) are still in Settings.
 
 Voice: tap 🎤 on the Book tab; it uses the phone's built-in speech recognition (en-NG) and fills the entry for confirmation.
+
+## 🔍 Price Scan (v6)
+On the Shelf tab, tap **Price Scan** and point the camera at a product. Every couple of seconds Meta Muse Spark Open looks at the box in the middle, matches it to the trader's own shelf, and pops up **her** price tag with stock left. One tap sells it (opens the confirm card, stock updates). Not on the shelf yet? One tap adds it with the AI's name, photo, category and unit already filled. Every trader keeps her own prices; nothing is shared.

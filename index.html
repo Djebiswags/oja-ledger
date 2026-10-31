@@ -92,6 +92,18 @@ label.snap{display:flex;align-items:center;justify-content:center;gap:8px;border
 .shlink{margin-top:8px;font-size:14px;color:#0a7d4f;font-weight:600}
 select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.75) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%235d6170%27 stroke-width=%272%27 fill=%27none%27/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px;color:var(--ink)}
 .tb-set a{color:#0a7d4f;font-weight:600}
+#scan{position:fixed;inset:0;z-index:80;background:#000}
+#scVid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scframe{position:absolute;left:12%;right:12%;top:22%;bottom:34%;border:3px solid rgba(255,255,255,.85);border-radius:28px;box-shadow:0 0 0 2000px rgba(0,0,0,.25)}
+#scan.busy .scframe{border-color:#2fd08a;animation:scpulse 1s ease-in-out infinite}
+@keyframes scpulse{50%{border-color:rgba(47,208,138,.3)}}
+.sctop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:16px;color:#fff;font-weight:700;font-size:15px;background:linear-gradient(rgba(0,0,0,.5),transparent)}
+.scx{background:rgba(255,255,255,.25);color:#fff;width:44px;height:44px;padding:0;font-size:18px;box-shadow:none}
+.schint{position:absolute;left:0;right:0;bottom:24px;text-align:center;color:#fff;font-size:15px;text-shadow:0 1px 4px #000;padding:0 20px}
+.sctag{position:absolute;left:50%;top:14%;transform:translateX(-50%);min-width:240px;max-width:88%;padding:16px 18px;border-radius:24px;background:rgba(255,255,255,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 40px rgba(0,0,0,.35);text-align:center;animation:tagpop .4s cubic-bezier(.2,1.5,.4,1)}
+@keyframes tagpop{from{opacity:0;transform:translate(-50%,10px) scale(.85)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+.sctag .pn{font-weight:800;font-size:18px}.sctag .pp{font-size:40px;font-weight:800;letter-spacing:-.03em;color:#0a7d4f;margin:2px 0}
+.sctag .row{margin-top:10px}.sctag button{font-size:15px;padding:10px 12px}
 .sayrow{display:flex;gap:10px;align-items:stretch;margin-top:8px}.sayrow textarea{flex:1}
 .mic{flex:none;width:64px;border-radius:20px;font-size:26px;padding:0;background:linear-gradient(145deg,#2fd08a,#0a7d4f);color:#fff}
 .mic.on{background:linear-gradient(145deg,#ff6b6b,#c62828);animation:pulse 1s ease-in-out infinite}
@@ -117,6 +129,7 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
   <label class="primary snap" for="snapIn"><span class="bi">📸</span> Snap product</label>
   <input type="file" id="snapIn" accept="image/*" capture="environment" hidden>
   <button class="ghost" onclick="shOpen()"><span class="bi">✍🏾</span> Add without photo</button>
+  <button class="primary" style="margin-top:10px;background:linear-gradient(145deg,#6f9dff,#3b5bdb)" onclick="scanOpen()"><span class="bi">🔍</span> Price Scan (point camera, see price)</button>
 </div>
 <div class="box tb-shelf" id="shForm" hidden>
   <img id="shPrev" class="shprev" alt="" hidden>
@@ -157,6 +170,13 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
   <p class="muted">🔒 Each key stays on this phone only (saved inside this browser). Oja Ledger no dey send am anywhere, except straight to the AI you pick when you snap a product. Meta via Puter no need key. No AI at all? No wahala, you fit type the name yourself.</p>
 </div>
 </main>
+<div id="scan" hidden>
+  <video id="scVid" playsinline muted autoplay></video>
+  <div class="scframe"></div>
+  <div class="sctop"><span id="scModel">🔍 Price Scan</span><button class="scx" onclick="scanClose()">✖</button></div>
+  <div id="scTag" class="sctag" hidden></div>
+  <div id="scHint" class="schint">Point camera at one product…</div>
+</div>
 <script>
 const NUM={one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,half:.5,dozen:12};
 const naira=n=>n==null?"-":"₦"+Number(n).toLocaleString("en-NG");
@@ -375,6 +395,50 @@ function waListText(){const shop=shopName.value.trim();const items=shelf.filter(
 function waListGo(){LS.set("ojaShop",shopName.value.trim());const t=waListText();if(!t){toast("🛒 Add products with stock first");return false}
   waList.href="https://wa.me/?text="+encodeURIComponent(t);buzz(10);return true}
 shopName.value=LS.get("ojaShop");shopName.addEventListener("change",()=>LS.set("ojaShop",shopName.value.trim()));
+
+// ---- v6: Price Scan, point camera and the trader's own price tag pops up ----
+let scStream=null,scTimer=null,scBusy=false,scLast=null,scOn=false;
+function scanPrompt(){const names=shelf.slice(0,120).map(p=>p.name);
+  return 'You are a price scanner for a Nigerian market trader. Look at the main product in the centre of this photo. Her shelf has these products: '+JSON.stringify(names)+'. Reply with JSON only: {"match": the exact name from her shelf list if it is the same product (same brand, and same size if visible), otherwise "", "name": short name for the product the way Nigerian traders say it with brand and size if visible, or "" if no product is clearly visible, "category": one or two words, "unit": how it is sold}.'}
+async function scanOpen(){const P=PROVIDERS[provId()];
+  if(!visionReady()){toast("⚙️ Pick an AI for Settings first");tab("set");return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("📷 This browser no fit open live camera. Use Snap product.");return}
+  try{scStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false})}
+  catch(e){toast("📷 Allow camera for this site, then try again");return}
+  scan.hidden=false;scOn=true;scVid.srcObject=scStream;scModel.textContent="🔍 Price Scan · "+modelLabel(provId(),provModel(provId()));
+  scTag.hidden=true;scLast=null;scHint.textContent=shelf.length?"Point camera at one product…":"Shelf empty, so I go just name things. Add prices to see tags.";
+  buzz(10);scTimer=setTimeout(scanTick,1200)}
+function scanClose(){scOn=false;clearTimeout(scTimer);if(scStream)scStream.getTracks().forEach(t=>t.stop());scStream=null;scan.hidden=true;scan.classList.remove("busy")}
+function scanFrame(max,q){const v=scVid,w=v.videoWidth,h=v.videoHeight;if(!w||!h)return null;
+  const cw=w*.76,ch=h*.6,cx=(w-cw)/2,cy=h*.18,s=Math.min(1,max/Math.max(cw,ch));
+  const c=document.createElement("canvas");c.width=Math.round(cw*s);c.height=Math.round(ch*s);c.getContext("2d").drawImage(v,cx,cy,cw,ch,0,0,c.width,c.height);return c.toDataURL("image/jpeg",q)}
+async function scanTick(){if(!scOn)return;if(document.hidden){scTimer=setTimeout(scanTick,1500);return}
+  const img=scanFrame(448,.75);if(!img){scTimer=setTimeout(scanTick,600);return}
+  scBusy=true;scan.classList.add("busy");scHint.textContent="🦙 Dey look am…";
+  try{const r=await aiChat([{role:"user",content:[{type:"image_url",image_url:{url:img}},{type:"text",text:scanPrompt()}]}],400,true);if(!scOn)return;
+    let o=null;const t=String(r.text||"").replace(/<think>[\s\S]*?(<\/think>|$)/gi,"").replace(/```(?:json)?/gi,"").trim();
+    try{o=JSON.parse(t)}catch(e){const m=t.match(/\{[\s\S]*\}/);if(m)try{o=JSON.parse(m[0])}catch(x){}}
+    o=o||{};let p=null;if(o.match)p=shelf.find(x=>norm(x.name)===norm(o.match))||findShelf(o.match);
+    if(!p&&o.name){const f=findShelf(o.name);if(f&&norm(f.name).length&&(norm(o.name).includes(norm(f.name))||norm(f.name).includes(norm(o.name))))p=f}
+    scShow(p,o,img)}
+  catch(e){if(!scOn)return;scHint.textContent=e&&e.message==="puter"?"🦙 Puter no answer. If a sign-in window came, finish am.":!navigator.onLine?"📴 Price Scan need network.":"🦙 AI no see am well. Hold am steady…"}
+  finally{scBusy=false;scan.classList.remove("busy");if(scOn)scTimer=setTimeout(scanTick,1800)}}
+function scShow(p,o,img){const key=p?"p:"+p.id:(o.name?"n:"+norm(o.name):"");
+  if(!key){scHint.textContent="🤔 I no see product. Bring am closer, fill the box.";return}
+  scHint.textContent=p?"✅ Na your own price be this":"🆕 E never dey your shelf";if(key===scLast&&!scTag.hidden)return;scLast=key;buzz(p?[10,30,10]:15);
+  if(p){scTag.innerHTML=`<div class="pn">${esc(p.name)}</div><div class="pp">${naira(p.price)}</div><div class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.stock<=3?` <span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}</div>
+    <div class="row"><button class="no" onclick="scSkip()">Next</button><button class="ok" onclick="scSell('${esc(p.id)}')">💰 Sell 1</button></div>`}
+  else{window._scNew={name:o.name,category:o.category||"",unit:o.unit||"",img};scTag.innerHTML=`<div class="pn">${esc(o.name)}</div><div class="muted" style="margin-top:4px">No price yet</div>
+    <div class="row"><button class="no" onclick="scSkip()">Next</button><button class="ok" onclick="scAdd()">🏷️ Add price</button></div>`}
+  scTag.hidden=false}
+function scSkip(){scTag.hidden=true;scLast=null}
+function scSell(id){const p=shelf.find(x=>x.id===id);if(!p)return;scanClose();tab("book");say.value="I sell 1 "+p.name;draft=shelfPrefill(parse(say.value));
+  draft.item=p.name;draft.qty=1;draft.unit_price=p.price;draft.total=p.price;draft.shelfId=p.id;showConfirm();document.getElementById("confirm").scrollIntoView({behavior:"smooth",block:"center"})}
+async function scAdd(){const n=window._scNew;if(!n)return;scanClose();tab("shelf");shOpen(null);shName.value=n.name;shCat.value=n.category;shUnit.value=n.unit;
+  shGuess={name:n.name,category:n.category,unit:n.unit,by:modelLabel(provId(),provModel(provId()))};shNameTouched=false;
+  try{const im=await loadImg(await (await fetch(n.img)).blob());shThumb=toJpeg(im,112,.7);shPrev.src=n.img;shPrev.hidden=false}catch(e){}
+  shStat("🔍 Price Scan see “"+n.name+"”. Put price and stock, then save.");shPrice.focus()}
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&scOn)scanClose()});
 render();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js");
 function net(){let b=document.getElementById("offb");if(!navigator.onLine){if(!b){b=document.createElement("div");b.id="offb";b.className="off";b.textContent="📴 No network? No wahala. Oja still dey work.";document.body.appendChild(b)}}else if(b)b.remove()}
