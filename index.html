@@ -110,7 +110,7 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 12px rgba(198,40,40,0)}}
 </style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
-<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v6</span></p></div></header>
+<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7</span></p></div></header>
 <nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
 <div class="box tb-book">
@@ -204,11 +204,31 @@ function countUp(el,to){const from=+(el.dataset.v||0);el.dataset.v=to;if(from===
   (function f(t){const k=Math.min(1,(t-t0)/d),e=1-Math.pow(1-k,3);el.textContent=naira(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(f);else{el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}})(t0)}
 document.addEventListener("pointerdown",e=>{const b=e.target.closest("button,.ex");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span");s.className="rip";s.style.left=(e.clientX-r.left)+"px";s.style.top=(e.clientY-r.top)+"px";b.appendChild(s);setTimeout(()=>s.remove(),650);buzz(8)});
 let draft=null;const book=JSON.parse(localStorage.oja||"[]");
-function hear(){const t=document.getElementById("say").value.trim();if(!t)return;draft=shelfPrefill(parse(t));showConfirm()}
+// v7: Meta Muse reads the ledger (Pidgin ok); rule-based parse() stays as offline fallback
+const BOOK_PROMPT=t=>`You keep the sales book for a Nigerian market trader. She talks Nigerian Pidgin or English. Turn what she said into ONE ledger entry.
+Her shelf items: ${shelf.slice(0,40).map(p=>p.name).join("; ")||"none yet"}.
+Rules: type is "sale" (she sold), "purchase" (she bought or restocked) or "debt" (someone owes her / will pay later). qty is a number (default 1). Money: "2k"=2000, "1.5k"=1500, "90 thousand"=90000. If she says "each"/"one one"/"per", that is unit_price; otherwise a single amount is the total. who = customer name if mentioned, else null. item = short product name; if it matches a shelf item, use the shelf name exactly.
+Reply JSON only: {"type":"sale|purchase|debt","item":"...","qty":1,"unit_price":null,"total":null,"who":null}
+She said: "${t}"`;
+let hearing=0;
+async function museRead(t){const r=await Promise.race([aiChat([{role:"user",content:BOOK_PROMPT(t)}],400,true),new Promise((_,rj)=>setTimeout(()=>rj(new Error("slow")),9000))]);
+  const x=String(r.text||"").replace(/<think>[\s\S]*?(<\/think>|$)/gi,"").replace(/```(?:json)?/gi,"");let o=null;
+  try{o=JSON.parse(x)}catch(e){const m=x.match(/\{[\s\S]*\}/);if(m)o=JSON.parse(m[0])}
+  if(!o||!["sale","purchase","debt"].includes(o.type))throw new Error("bad");
+  const num=v=>v==null||v===""?null:(typeof v==="number"?v:parsePrice(v));let qty=num(o.qty)||1,u=num(o.unit_price),tot=num(o.total);
+  if(tot==null&&u!=null)tot=u*qty;if(u==null&&tot!=null)u=Math.round(tot/qty*100)/100;
+  return{time:new Date().toLocaleString("en-NG",{timeZone:"Africa/Lagos"}),type:o.type,item:o.item?String(o.item).slice(0,60):null,qty,unit_price:u,total:tot,
+    who:o.who?String(o.who).slice(0,40):null,heard:t,by:r.label}}
+async function hear(){const t=document.getElementById("say").value.trim();if(!t)return;const my=++hearing;let d=null;
+  if(navigator.onLine&&visionReady()){draft={type:"sale",total:null,heard:t,qty:1,thinking:true};showConfirm();
+    try{d=await museRead(t)}catch(e){d=null}if(my!==hearing)return}
+  if(!d){d=parse(t);d.by="offline rules"}
+  draft=shelfPrefill(d);showConfirm()}
 function showConfirm(){const e=draft,c=document.getElementById("confirm");c.hidden=false;
+  if(e.thinking){c.innerHTML=`<div class="muted">🦙 Meta Muse dey read wetin you talk…</div><div class="muted">"${esc(e.heard)}"</div>`;return}
   const label={sale:"SALE 💰",purchase:"PURCHASE 📦",debt:"DEBT 📝"}[e.type];
   c.innerHTML=`<span class="chip ${e.type}">${label}</span><div class="big">${naira(e.total)}</div>
-  <div class="muted">You talk: "${e.heard}"</div>${shelfNote(e)}
+  <div class="muted">You talk: "${esc(e.heard)}"</div><div class="muted" style="font-size:.8em">🧠 Read by ${esc(e.by||"offline rules")}</div>${shelfNote(e)}
   <div class="grid"><div class="fld"><span class="fi">🛍️</span><span>Item<input class="f" id="fi" value="${e.item||""}"></span></div><div class="fld"><span class="fi">🔢</span><span>Qty<input class="f" id="fq" type="number" value="${e.qty}"></span></div>
   <div class="fld"><span class="fi">🏷️</span><span>Unit price<input class="f" id="fu" type="number" value="${e.unit_price??""}"></span></div><div class="fld"><span class="fi">${e.type==="debt"?"👤":"🔖"}</span><span>${e.type==="debt"?"Who owe":"Type"}<input class="f" id="fw" value="${e.type==="debt"?(e.who||""):e.type}"></span></div></div>
   <div class="row"><button class="no" onclick="cancel()"><span class="bi">✏️</span> No be am</button><button class="ok" onclick="confirmIt()"><span class="bi">✅</span> Correct!</button></div>`}
