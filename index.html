@@ -137,7 +137,7 @@ input,textarea,select{font-size:16px}
 #confirm{scroll-margin-top:calc(var(--hdr,86px) + 72px)}
 </style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
-<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.4</span></p></div></header>
+<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.5</span></p></div></header>
 <nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
 <div class="box tb-book">
@@ -153,7 +153,7 @@ input,textarea,select{font-size:16px}
   <div class="totals"><div><div class="ticon sale">💰</div>Sold<b id="tSale">₦0</b></div><div><div class="ticon purchase">📦</div>Bought<b id="tBuy">₦0</b></div><div><div class="ticon debt">📝</div>Owed you<b id="tDebt">₦0</b></div></div></div>
 <div class="box tb-book"><h3 style="margin-top:0">Ledger</h3><ul id="book"></ul></div>
 <div class="box tb-shelf"><h3 style="margin-top:0">🛒 Mama's Shelf</h3>
-  <div class="muted">Snap product, Llama go name am. You set price, stock go track itself.</div>
+  <div class="muted">Snap product, Muse go name am. You set price, stock go track itself.</div>
   <label class="primary snap" for="snapIn"><span class="bi">📸</span> Snap product</label>
   <input type="file" id="snapIn" accept="image/*" capture="environment" hidden>
   <button class="ghost" onclick="shOpen()"><span class="bi">✍🏾</span> Add without photo</button>
@@ -175,7 +175,7 @@ input,textarea,select{font-size:16px}
   <div class="totals"><div><div class="ticon sale">🛍️</div>Items sold<b id="stQty">0</b></div><div><div class="ticon purchase">💰</div>Money in<b id="stMoney">₦0</b></div><div><div class="ticon debt">⚠️</div>Low stock<b id="stLow">0</b></div></div>
   <div id="stLowList" class="muted" style="margin-top:10px"></div>
 </div>
-<div class="box tb-shelf"><h3 style="margin-top:0">Shelf</h3><ul id="shelfList"></ul>
+<div class="box tb-shelf"><h3 style="margin-top:0">Shelf</h3><input id="shQ" class="keyin" type="search" placeholder="🔎 Search your shelf… e.g. milo" autocomplete="off" oninput="shFilter()" style="margin-bottom:10px"><ul id="shelfList"></ul><div id="shNone" class="muted" hidden>No item like that for shelf.</div>
   <input id="shopName" class="keyin" style="margin-top:12px" placeholder="Your shop name (e.g. Mama Chidi Provisions)" autocomplete="off">
   <a id="waList" class="primary snap" style="text-decoration:none;background:linear-gradient(145deg,#3ee07a,#1ea952)" target="_blank" rel="noopener" onclick="return waListGo()"><span class="bi">📲</span> Send price list on WhatsApp</a>
   <div class="muted" style="margin-top:6px">Customers see wetin dey shelf, the price, and reply to order. Finished items no go show.</div></div>
@@ -390,9 +390,10 @@ function shDel(id){const p=shelf.find(x=>x.id===id);if(!p||!window.confirm("Remo
   const li=document.getElementById("sh-"+id);buzz(20);if(li)li.classList.add("gone");
   setTimeout(()=>{shelf=shelf.filter(x=>x.id!==id);saveShelf();renderShelf();toast("🗑 E don comot for shelf")},330)}
 function renderShelf(){
-  shelfList.innerHTML=shelf.map((p,i)=>`<li id="sh-${esc(p.id)}" style="animation-delay:${Math.min(i,8)*45}ms"><span class="shrow">${p.thumb?`<img class="thumb" src="${esc(p.thumb)}" alt="" onclick="zoom('${esc(p.id)}')">`:`<span class="thumb">🛍️</span>`}<span><b>${esc(p.name)}</b>${p.stock<=3?`<span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}<br><span class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.category?" · "+esc(p.category):""}<br>${p.taggedBy?`<span class="tag-ai">🦙 ${esc(String(p.taggedBy).split(" · ")[0])}${p.edited?" · edited":""}</span>`:`<span class="tag-me">✍🏾 typed by you</span>`}</span></span></span><span style="text-align:right;white-space:nowrap"><b>${naira(p.price)}</b><br><a class="ed" href="#" onclick="shEdit('${esc(p.id)}');return false">✏️</a> <a class="del" href="#" onclick="shDel('${esc(p.id)}');return false">🗑</a></span></li>`).join("")
+  shelfList.innerHTML=shelf.map((p,i)=>`<li id="sh-${esc(p.id)}" style="animation-delay:${Math.min(i,8)*45}ms"><span class="shrow">${p.thumb?`<img class="thumb" src="${esc(p.thumb)}" alt="" onclick="zoom('${esc(p.id)}')">`:`<span class="thumb">🛍️</span>`}<span><b>${esc(p.name)}</b>${p.stock<=3?`<span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}<br><span class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.category?" · "+esc(p.category):""}<br>${p.taggedBy?`<span class="tag-ai">🦙 ${esc(String(p.taggedBy).split(" · ")[0])}${p.edited?" · edited":""}</span>`:`<span class="tag-me">✍🏾 typed by you</span>`}</span></span></span><span style="text-align:right;white-space:nowrap"><b>${naira(p.price)}</b><br><a class="ed" href="#" title="Sell 1" onclick="scSell('${esc(p.id)}');return false">💰</a> <a class="ed" href="#" onclick="shEdit('${esc(p.id)}');return false">✏️</a> <a class="del" href="#" onclick="shDel('${esc(p.id)}');return false">🗑</a></span></li>`).join("")
     ||'<span class="muted">Shelf empty. Snap your first product! 📸</span>';
-  renderShelfToday()}
+  shFilter();renderShelfToday()}
+function shFilter(){const q=(document.getElementById('shQ')?.value||'').trim().toLowerCase();let n=0;shelf.forEach(p=>{const li=document.getElementById('sh-'+p.id);if(!li)return;const hit=!q||(p.name+' '+(p.category||'')).toLowerCase().includes(q);li.style.display=hit?'':'none';if(hit)n++});const none=document.getElementById('shNone');if(none)none.hidden=!(q&&shelf.length&&!n)}
 function renderShelfToday(){if(typeof stQty==="undefined")return;const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});let q=0,m=0;
   book.forEach(e=>{if(e.type==="sale"&&e.shelfId&&String(e.time||"").startsWith(today)){q+=+e.qty||0;m+=+e.total||0}});
   const low=shelf.filter(p=>p.stock<=3);stQty.textContent=Math.round(q*100)/100;countUp(stMoney,m);stLow.textContent=low.length;
