@@ -137,12 +137,12 @@ input,textarea,select{font-size:16px}
 #confirm{scroll-margin-top:calc(var(--hdr,86px) + 72px)}
 </style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
-<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.3</span></p></div></header>
+<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.4</span></p></div></header>
 <nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
 <div class="box tb-book">
   <label class="muted">Wetin happen for market? Tap 🎤 and talk, or type.</label>
-  <div class="sayrow"><textarea id="say" rows="2" placeholder="I sell 3 tuber yam 2k each"></textarea><button id="micBtn" class="mic" type="button" onclick="micToggle()" aria-label="Talk">🎤</button></div>
+  <div class="sayrow"><textarea id="say" rows="2" placeholder="I sell 3 tubers of yam 2k each"></textarea><button id="micBtn" class="mic" type="button" onclick="micToggle()" aria-label="Talk">🎤</button></div>
   <div id="micStat" class="muted" style="margin-top:6px" hidden></div>
   <div id="examples"></div>
   <a href="#" id="exOff" class="muted" style="display:inline-block;margin-top:8px;font-size:13px" onclick="exShow(false);return false">✕ Hide examples</a>
@@ -220,7 +220,7 @@ function parse(text){
   if(price==null){const ns=(low.match(/\b\d[\d,]*k?\b/g)||[]).map(money).filter(n=>n&&n>=100);if(ns.length)price=Math.max(...ns)}
   let qty=null;for(const tok of low.match(/[a-z]+|\d+(?:\.\d+)?k?/g)||[]){let v=tok in NUM?NUM[tok]:(/^\d+(\.\d+)?$/.test(tok)?parseFloat(tok):null);if(v!=null&&v!==price){qty=v;break}}
   qty=qty||1;let item=null;
-  const im=low.match(new RegExp("(?:\\d+|"+Object.keys(NUM).join("|")+")\\s+((?:[a-z]+\\s?){1,3}?)(?=\\s*(?:for|at|₦|\\d|each|per|$))"));if(im)item=im[1].trim();
+  const im=low.match(new RegExp("(?:\\d+|"+Object.keys(NUM).join("|")+")\\s+((?:[a-z]+\\s?){1,3}?)(?=\\s*(?:for|at|₦|\\d|each|per|$))"));if(im)item=im[1].trim().replace(/^(?:tubers?|bags?|crates?|cartons?|packs?|pieces?|sachets?|tins?|bottles?|mudus?|cups?|tubes?)\s+of\s+/,"").replace(/\bof\s+/,"");
   let who=null;if(type==="debt"){const d=low.match(/\bfor\s+([a-z]+(?:\s[a-z]+)?)/);if(d)item=d[1];const w=low.match(/^\s*([a-z]+(?:\s[a-z]+)?)\s+(?:dey\s+)?owe/);if(w)who=w[1].replace(/\b\w/g,c=>c.toUpperCase());qty=1}
   const total=price==null?null:(each?price*qty:price);const unit=price==null?null:(each?price:Math.round(price/qty*100)/100);
   return {time:new Date().toLocaleString("en-NG",{timeZone:"Africa/Lagos"}),type,item,qty,unit_price:unit,total,who,heard:text};
@@ -239,7 +239,7 @@ const BOOK_PROMPT=t=>`You keep the sales book for a Nigerian market trader. She 
 Her shelf items: ${shelf.slice(0,40).map(p=>p.name).join("; ")||"none yet"}.
 Pidgin guide: "I sell"/"I don sell"/"X buy from me"/"customer buy" = sale. "I buy"/"I don buy"/"I carry come"/"restock" = purchase (SHE bought goods). "owe"/"dey owe"/"go pay"/"go bring money"/"never pay"/"pay later"/"take am on credit"/"balance remain" = debt (someone owes HER). "don"=already, "wey"=that/which, "am"=it, "dem"=they, "one one"/"each"/"per" = price per piece, "k"=thousand ("3k"=3000, "1.5k"=1500, "2 k"=2000), "thousand" ("five thousand"=5000), "hundred" ("five hundred"=500), "naira" or "N". Words like "Mama", "Iya", "Oga", "Aunty", "Brother", "Madam", "Baba" before a name are part of the customer name (who), never the item. "bag"/"crate"/"carton"/"tin"/"sachet"/"paint"/"mudu"/"derica"/"tuber"/"bunch" are units: put the product name in item (e.g. "2 bag rice" -> item "rice", qty 2). Days like Friday/tomorrow are not items.
 Examples:
-"I sell 3 tuber yam 2k each" -> {"type":"sale","item":"tuber yam","qty":3,"unit_price":2000,"total":6000,"who":null}
+"I sell 3 tubers of yam 2k each" -> {"type":"sale","item":"yam","qty":3,"unit_price":2000,"total":6000,"who":null}
 "Mama Ngozi go pay 3k Friday for rice" -> {"type":"debt","item":"rice","qty":1,"unit_price":null,"total":3000,"who":"Mama Ngozi"}
 "Emeka dey owe me 1500 for pepper" -> {"type":"debt","item":"pepper","qty":1,"unit_price":null,"total":1500,"who":"Emeka"}
 "I don buy 5 crate egg for 25k" -> {"type":"purchase","item":"egg","qty":5,"unit_price":5000,"total":25000,"who":null}
@@ -438,7 +438,7 @@ function tab(t){if(!["book","shelf","set"].includes(t))t="book";const ch=documen
 snapIn.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e.target.value="";shSnap(f).catch(()=>shStat("Type the name yourself."))});
 shName.addEventListener("input",()=>{shNameTouched=true});
 provSel.innerHTML=Object.entries(PROVIDERS).map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join("");provSel.value=provId();setFill();renderShelf();tab(localStorage.ojaTab||"book");
-["I sell 3 tuber yam 2k each","Mama Chidi buy 2 bag rice for 90000","I don buy 5 crate egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
+["I sell 3 tubers of yam 2k each","Mama Chidi buy 2 bags of rice for 90000","I don buy 5 crates of egg for 25k","Emeka owe me 1500 for pepper"].forEach(x=>{const b=document.createElement("button");b.className="ex";b.textContent=x;b.onclick=()=>{say.value=x;hear()};examples.appendChild(b)});
 function exShow(on){localStorage.setItem("oja_ex",on?"1":"0");examples.style.display=on?"":"none";document.getElementById("exOff").style.display=on?"inline-block":"none";const t=document.getElementById("exTog");if(t)t.checked=on}
 exShow(localStorage.getItem("oja_ex")!=="0");
 
