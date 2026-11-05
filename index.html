@@ -109,6 +109,14 @@ select.keyin{appearance:none;-webkit-appearance:none;background:rgba(255,255,255
 .mic.on{background:linear-gradient(145deg,#ff6b6b,#c62828);animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 12px rgba(198,40,40,0)}}
 
+/* ---- v7.2: product photos everywhere ---- */
+.thumb{width:64px!important;height:64px!important;cursor:zoom-in}
+.bthumb{width:40px;height:40px;border-radius:10px;object-fit:cover;vertical-align:middle;margin-right:8px;border:1px solid var(--edge);cursor:zoom-in}
+.cphoto{width:100%;max-height:200px;object-fit:contain;border-radius:18px;margin:8px 0;background:rgba(255,255,255,.6);border:1px solid var(--edge);cursor:zoom-in}
+.scphoto{width:72px;height:72px;border-radius:14px;object-fit:cover;float:right;margin-left:10px;border:2px solid #fff}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:grid;place-items:center;padding:18px}
+#lightbox img{max-width:100%;max-height:78vh;border-radius:18px}
+#lightbox div{color:#fff;font-weight:700;text-align:center;margin-top:12px;font-size:1.1em}
 /* ---- v7.1 polish: smoother, tidier ---- */
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{overscroll-behavior-y:none;padding-bottom:env(safe-area-inset-bottom)}
@@ -129,7 +137,7 @@ input,textarea,select{font-size:16px}
 #confirm{scroll-margin-top:calc(var(--hdr,86px) + 72px)}
 </style></head><body data-tab="book">
 <div class="bg-blob" style="background:#ffcf6e;top:-80px;left:-80px"></div><div class="bg-blob" style="background:#6fe0b0;top:30%;right:-120px;animation-delay:-6s"></div><div class="bg-blob" style="background:#9dbcff;bottom:-120px;left:20%;animation-delay:-12s"></div>
-<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.1</span></p></div></header>
+<header><div class="appicon">🧺</div><div><h1>Oja Ledger</h1><p>Talk your sales. We write the book. <span style="opacity:.6">· v7.2</span></p></div></header>
 <nav class="tabs"><button data-t="book" class="on" onclick="tab('book')">📒 Book</button><button data-t="shelf" onclick="tab('shelf')">🛒 Shelf</button><button data-t="set" onclick="tab('set')">⚙️ Settings</button></nav>
 <main>
 <div class="box tb-book">
@@ -202,7 +210,8 @@ const naira=n=>n==null?"-":"₦"+Number(n).toLocaleString("en-NG");
 function money(t){t=t.toLowerCase().replace(/[,₦]|naira/g,"").trim();const m=t.match(/^(\d+(?:\.\d+)?)(k)?$/);if(!m)return null;let v=parseFloat(m[1]);return m[2]?v*1000:v}
 function parse(text){
   const low=" "+text.toLowerCase()+" ";let type="sale";
-  if(/owe|credit|go pay later|never pay/.test(low))type="debt";
+  const cue=pidginType(text);if(cue)type=cue;
+  else if(/owe|credit|go pay later|never pay/.test(low))type="debt";
   else if(/ i buy | i don buy |bought|restock/.test(low))type="purchase";
   let price=null,each=false;const pm=low.match(/(?:for|at|₦|n)\s*([\d,\.]+k?)|([\d,\.]+k)\b|([\d,]+)\s*naira/);
   if(pm){price=money(pm[1]||pm[2]||pm[3]);each=/\b(each|per|one one|apiece)\b/.test(low.slice(pm.index+pm[0].length,pm.index+pm[0].length+15))}
@@ -224,16 +233,33 @@ function countUp(el,to){const from=+(el.dataset.v||0);el.dataset.v=to;if(from===
 document.addEventListener("pointerdown",e=>{const b=e.target.closest("button,.ex");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span");s.className="rip";s.style.left=(e.clientX-r.left)+"px";s.style.top=(e.clientY-r.top)+"px";b.appendChild(s);setTimeout(()=>s.remove(),650);buzz(8)});
 let draft=null;const book=JSON.parse(localStorage.oja||"[]");
 // v7: Meta Muse reads the ledger (Pidgin ok); rule-based parse() stays as offline fallback
-const BOOK_PROMPT=t=>`You keep the sales book for a Nigerian market trader. She talks Nigerian Pidgin or English. Turn what she said into ONE ledger entry.
+const BOOK_PROMPT=t=>`You keep the sales book for a Nigerian market trader. She talks Nigerian Pidgin, English, or a mix. Turn what she said into ONE ledger entry.
 Her shelf items: ${shelf.slice(0,40).map(p=>p.name).join("; ")||"none yet"}.
-Rules: type is "sale" (she sold), "purchase" (she bought or restocked) or "debt" (someone owes her / will pay later). qty is a number (default 1). Money: "2k"=2000, "1.5k"=1500, "90 thousand"=90000. If she says "each"/"one one"/"per", that is unit_price; otherwise a single amount is the total. who = customer name if mentioned, else null. item = short product name; if it matches a shelf item, use the shelf name exactly.
-Reply JSON only: {"type":"sale|purchase|debt","item":"...","qty":1,"unit_price":null,"total":null,"who":null}
+Pidgin guide: "I sell"/"I don sell"/"X buy from me"/"customer buy" = sale. "I buy"/"I don buy"/"I carry come"/"restock" = purchase (SHE bought goods). "owe"/"dey owe"/"go pay"/"go bring money"/"never pay"/"pay later"/"take am on credit"/"balance remain" = debt (someone owes HER). "don"=already, "wey"=that/which, "am"=it, "dem"=they, "one one"/"each"/"per" = price per piece, "k"=thousand ("3k"=3000, "1.5k"=1500, "2 k"=2000), "thousand" ("five thousand"=5000), "hundred" ("five hundred"=500), "naira" or "N". Words like "Mama", "Iya", "Oga", "Aunty", "Brother", "Madam", "Baba" before a name are part of the customer name (who), never the item. "bag"/"crate"/"carton"/"tin"/"sachet"/"paint"/"mudu"/"derica"/"tuber"/"bunch" are units: put the product name in item (e.g. "2 bag rice" -> item "rice", qty 2). Days like Friday/tomorrow are not items.
+Examples:
+"I sell 3 tuber yam 2k each" -> {"type":"sale","item":"tuber yam","qty":3,"unit_price":2000,"total":6000,"who":null}
+"Mama Ngozi go pay 3k Friday for rice" -> {"type":"debt","item":"rice","qty":1,"unit_price":null,"total":3000,"who":"Mama Ngozi"}
+"Emeka dey owe me 1500 for pepper" -> {"type":"debt","item":"pepper","qty":1,"unit_price":null,"total":1500,"who":"Emeka"}
+"I don buy 5 crate egg for 25k" -> {"type":"purchase","item":"egg","qty":5,"unit_price":5000,"total":25000,"who":null}
+"Oga Tunde buy 2 carton Indomie, 9 thousand one one" -> {"type":"sale","item":"Indomie","qty":2,"unit_price":9000,"total":18000,"who":"Oga Tunde"}
+"Aunty Bisi carry 4 Milo, she go bring the money tomorrow" -> {"type":"debt","item":"Milo","qty":4,"unit_price":null,"total":null,"who":"Aunty Bisi"}
+Rules: qty is a number (default 1). If no amount is said, use the shelf price if the item is on her shelf, else null. item = short product name; if it matches a shelf item, use the shelf name exactly. who = customer name or null.
+Reply JSON only, no other words: {"type":"sale|purchase|debt","item":"...","qty":1,"unit_price":null,"total":null,"who":null}
 She said: "${t}"`;
 let hearing=0;
+function bookThumb(e){const p=e.shelfId&&shelf.find(x=>x.id===e.shelfId);return p&&p.thumb?`<img class="bthumb" src="${esc(p.thumb)}" alt="" onclick="zoom('${esc(p.id)}')">`:""}
+function zoom(id){const p=shelf.find(x=>x.id===id);if(!p||!p.thumb)return;const d=document.createElement("div");d.id="lightbox";
+  d.innerHTML=`<span><img src="${esc(p.thumb)}" alt=""><div>${esc(p.name)} · ${naira(p.price)} · ${p.stock} left</div></span>`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+// v7.2: Pidgin cues double-check Muse's sale/purchase/debt call
+function pidginType(t){const l=" "+t.toLowerCase()+" ";
+  if(/ owe | dey owe |credit| go pay| go bring (the )?money| never pay| no pay| pay later| pay me later| take am on credit| collect am on credit| balance remain| remain (me )?\d/.test(l))return"debt";
+  if(/ i buy | i don buy | i buy am | i carry come | i restock|restock| bring (new )?goods| market wey i buy|bought| i order | supply me /.test(l))return"purchase";
+  if(/ i sell | i don sell | sold | sell am | buy from me | don buy from me | come buy | customer buy /.test(l))return"sale";return null}
 async function museRead(t){const r=await Promise.race([aiChat([{role:"user",content:BOOK_PROMPT(t)}],400,true),new Promise((_,rj)=>setTimeout(()=>rj(new Error("slow")),9000))]);
   const x=String(r.text||"").replace(/<think>[\s\S]*?(<\/think>|$)/gi,"").replace(/```(?:json)?/gi,"");let o=null;
   try{o=JSON.parse(x)}catch(e){const m=x.match(/\{[\s\S]*\}/);if(m)o=JSON.parse(m[0])}
-  if(!o||!["sale","purchase","debt"].includes(o.type))throw new Error("bad");
+  if(!o)throw new Error("bad");o.type=String(o.type||"").toLowerCase().trim();const cue=pidginType(t);if(cue&&cue!==o.type)o.type=cue;
+  if(!["sale","purchase","debt"].includes(o.type))throw new Error("bad");
   const num=v=>v==null||v===""?null:(typeof v==="number"?v:parsePrice(v));let qty=num(o.qty)||1,u=num(o.unit_price),tot=num(o.total);
   if(tot==null&&u!=null)tot=u*qty;if(u==null&&tot!=null)u=Math.round(tot/qty*100)/100;
   return{time:new Date().toLocaleString("en-NG",{timeZone:"Africa/Lagos"}),type:o.type,item:o.item?String(o.item).slice(0,60):null,qty,unit_price:u,total:tot,
@@ -264,7 +290,7 @@ function del(i){if(window.confirm("Remove this entry?")){const li=document.getEl
 function render(){const s={sale:0,purchase:0,debt:0};const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});
   book.forEach(e=>{if(e.time.startsWith(today))s[e.type]+=e.total||0});
   countUp(tSale,s.sale);countUp(tBuy,s.purchase);countUp(tDebt,s.debt);if(typeof renderShelfToday==="function")renderShelfToday();
-  document.getElementById("book").innerHTML=book.map((e,i)=>`<li style="animation-delay:${Math.min(i,8)*45}ms"><span><span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
+  document.getElementById("book").innerHTML=book.map((e,i)=>`<li style="animation-delay:${Math.min(i,8)*45}ms"><span>${bookThumb(e)}<span class="chip ${e.type}">${e.type}</span> ${e.qty} ${e.item||""}${e.who?" · "+e.who:""}<br><span class="muted">${e.time}</span></span><span style="text-align:right"><b>${naira(e.total)}</b><br><a class="wa" target="_blank" href="${waLink(e)}">Send on WhatsApp</a> <a class="del" href="#" onclick="del(${i});return false">🗑</a></span></li>`).join("")||'<span class="muted">Nothing yet. Market never open? 😄</span>'}
 // ---- Mama's Shelf v3: snap a product, Llama 4 names it, stock tracks itself ----
 const PROVIDERS={
   puter:{name:"Meta via Puter",label:"Meta Muse (free, no key, via Puter)",url:"puter",keyHint:"",getKey:"",nokey:true,
@@ -335,7 +361,7 @@ function shOpen(p){shEditId=p?p.id:null;shGuess=null;shThumb=p?p.thumb||null:nul
 function shClose(){shForm.hidden=true;shEditId=null;shThumb=null;shSeq++}
 async function shSnap(file){if(!file)return;const editing=shEditId?shelf.find(p=>p.id===shEditId):null;shOpen(editing||null);
   shNameTouched=!!editing;const my=++shSeq;let full;
-  try{const img=await loadImg(file);full=toJpeg(img,512,.8);shThumb=toJpeg(img,112,.7);shPrev.src=full;shPrev.hidden=false}
+  try{const img=await loadImg(file);full=toJpeg(img,512,.8);shThumb=toJpeg(img,320,.72);shPrev.src=full;shPrev.hidden=false}
   catch(e){shStat("📷 That photo no gree open. Type the name yourself.");return}
   if(!visionReady()){shStat("🔑 No AI key yet, so type the name yourself. (Pick an AI for ⚙️ Settings make it help you.)");shName.focus();return}
   shStat("🦙 "+modelLabel(provId(),provModel(provId()))+" dey look am…",true);
@@ -362,7 +388,7 @@ function shDel(id){const p=shelf.find(x=>x.id===id);if(!p||!window.confirm("Remo
   const li=document.getElementById("sh-"+id);buzz(20);if(li)li.classList.add("gone");
   setTimeout(()=>{shelf=shelf.filter(x=>x.id!==id);saveShelf();renderShelf();toast("🗑 E don comot for shelf")},330)}
 function renderShelf(){
-  shelfList.innerHTML=shelf.map((p,i)=>`<li id="sh-${esc(p.id)}" style="animation-delay:${Math.min(i,8)*45}ms"><span class="shrow">${p.thumb?`<img class="thumb" src="${esc(p.thumb)}" alt="">`:`<span class="thumb">🛍️</span>`}<span><b>${esc(p.name)}</b>${p.stock<=3?`<span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}<br><span class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.category?" · "+esc(p.category):""}<br>${p.taggedBy?`<span class="tag-ai">🦙 ${esc(String(p.taggedBy).split(" · ")[0])}${p.edited?" · edited":""}</span>`:`<span class="tag-me">✍🏾 typed by you</span>`}</span></span></span><span style="text-align:right;white-space:nowrap"><b>${naira(p.price)}</b><br><a class="ed" href="#" onclick="shEdit('${esc(p.id)}');return false">✏️</a> <a class="del" href="#" onclick="shDel('${esc(p.id)}');return false">🗑</a></span></li>`).join("")
+  shelfList.innerHTML=shelf.map((p,i)=>`<li id="sh-${esc(p.id)}" style="animation-delay:${Math.min(i,8)*45}ms"><span class="shrow">${p.thumb?`<img class="thumb" src="${esc(p.thumb)}" alt="" onclick="zoom('${esc(p.id)}')">`:`<span class="thumb">🛍️</span>`}<span><b>${esc(p.name)}</b>${p.stock<=3?`<span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}<br><span class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.category?" · "+esc(p.category):""}<br>${p.taggedBy?`<span class="tag-ai">🦙 ${esc(String(p.taggedBy).split(" · ")[0])}${p.edited?" · edited":""}</span>`:`<span class="tag-me">✍🏾 typed by you</span>`}</span></span></span><span style="text-align:right;white-space:nowrap"><b>${naira(p.price)}</b><br><a class="ed" href="#" onclick="shEdit('${esc(p.id)}');return false">✏️</a> <a class="del" href="#" onclick="shDel('${esc(p.id)}');return false">🗑</a></span></li>`).join("")
     ||'<span class="muted">Shelf empty. Snap your first product! 📸</span>';
   renderShelfToday()}
 function renderShelfToday(){if(typeof stQty==="undefined")return;const today=new Date().toLocaleDateString("en-NG",{timeZone:"Africa/Lagos"});let q=0,m=0;
@@ -373,7 +399,7 @@ function renderShelfToday(){if(typeof stQty==="undefined")return;const today=new
 function shelfPrefill(d){if(!d||(d.type!=="sale"&&d.type!=="purchase"))return d;const p=findShelf(d.item);if(!p)return d;
   d.shelfId=p.id;if(d.type==="sale"&&d.unit_price==null&&p.price!=null){d.unit_price=p.price;d.total=Math.round(p.price*(d.qty||1)*100)/100;d.priceFromShelf=true}return d}
 function shelfNote(e){if(!e.shelfId)return"";const p=shelf.find(x=>x.id===e.shelfId);if(!p)return"";
-  return `<div class="shlink">🛒 Shelf: ${esc(p.name)} · ${p.stock} left${e.priceFromShelf?" · price from shelf":""}</div>`}
+  return `${p.thumb?`<img class="cphoto" src="${esc(p.thumb)}" alt="" onclick="zoom('${esc(p.id)}')">`:""}<div class="shlink">🛒 Shelf: ${esc(p.name)} · ${p.stock} left${e.priceFromShelf?" · price from shelf":""}</div>`}
 // called when a ledger entry is confirmed: sale cuts stock, purchase adds stock
 function shelfApply(d){try{if(d.type!=="sale"&&d.type!=="purchase"){delete d.shelfId;return}
   const p=findShelf(d.item);if(!p){delete d.shelfId;return}
@@ -465,7 +491,7 @@ async function scanTick(){if(!scOn)return;if(document.hidden){scTimer=setTimeout
 function scShow(p,o,img){const key=p?"p:"+p.id:(o.name?"n:"+norm(o.name):"");
   if(!key){scHint.textContent="🤔 I no see product. Bring am closer, fill the box.";return}
   scHint.textContent=p?"✅ Na your own price be this":"🆕 E never dey your shelf";if(key===scLast&&!scTag.hidden)return;scLast=key;buzz(p?[10,30,10]:15);
-  if(p){scTag.innerHTML=`<div class="pn">${esc(p.name)}</div><div class="pp">${naira(p.price)}</div><div class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.stock<=3?` <span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}</div>
+  if(p){scTag.innerHTML=`${p.thumb?`<img class="scphoto" src="${esc(p.thumb)}" alt="">`:""}<div class="pn">${esc(p.name)}</div><div class="pp">${naira(p.price)}</div><div class="muted">${p.stock} ${esc(p.unit||"left")}${p.unit?" left":""}${p.stock<=3?` <span class="low">${p.stock<=0?"FINISH":"LOW"}</span>`:""}</div>
     <div class="row"><button class="no" onclick="scSkip()">Next</button><button class="ok" onclick="scSell('${esc(p.id)}')">💰 Sell 1</button></div>`}
   else{window._scNew={name:o.name,category:o.category||"",unit:o.unit||"",img};scTag.innerHTML=`<div class="pn">${esc(o.name)}</div><div class="muted" style="margin-top:4px">No price yet</div>
     <div class="row"><button class="no" onclick="scSkip()">Next</button><button class="ok" onclick="scAdd()">🏷️ Add price</button></div>`}
@@ -475,7 +501,7 @@ function scSell(id){const p=shelf.find(x=>x.id===id);if(!p)return;scanClose();ta
   draft.item=p.name;draft.qty=1;draft.unit_price=p.price;draft.total=p.price;draft.shelfId=p.id;showConfirm();document.getElementById("confirm").scrollIntoView({behavior:"smooth",block:"center"})}
 async function scAdd(){const n=window._scNew;if(!n)return;scanClose();tab("shelf");shOpen(null);shName.value=n.name;shCat.value=n.category;shUnit.value=n.unit;
   shGuess={name:n.name,category:n.category,unit:n.unit,by:modelLabel(provId(),provModel(provId()))};shNameTouched=false;
-  try{const im=await loadImg(await (await fetch(n.img)).blob());shThumb=toJpeg(im,112,.7);shPrev.src=n.img;shPrev.hidden=false}catch(e){}
+  try{const im=await loadImg(await (await fetch(n.img)).blob());shThumb=toJpeg(im,320,.72);shPrev.src=n.img;shPrev.hidden=false}catch(e){}
   shStat("🔍 Price Scan see “"+n.name+"”. Put price and stock, then save.");shPrice.focus()}
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&scOn)scanClose()});
 render();
